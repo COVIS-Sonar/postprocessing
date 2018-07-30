@@ -38,6 +38,9 @@ function [swp_path, swp_name] = covis_extract(filename, outputdir)
 swp_path = 0;
 swp_name = 0;
 
+% Ensure it's a string before processing...
+filename = string(filename);
+
 % pick a sweep archive, if none given
 if(isempty(filename))
     error('No filename specified')
@@ -142,12 +145,12 @@ elseif(strcmp(ext,'.tar'))
 
   elseif(strcmp(ext,'.7z'))
 
-    error(['Cannot handle 7z format natively (yet).  Please uncompress manually first.']);
+    error("Cannot handle 7z format natively (yet).  Please uncompress manually first.");
     return;
 
 
 else
-    warning(['Unknown COVIS archive type: ''' ext '''. This will probably cause an error.']);
+    warning("Unknown COVIS archive type: %s . This will probably cause an error.", ext);
     swp_name = [];
     swp_path = [];
 

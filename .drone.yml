@@ -1,24 +1,14 @@
 
 
 pipeline:
-  # restore_cache:
-  #   image: drillster/drone-volume-cache:latest
-  #   restore: true
-  #   mount:
-  #     - /var/lib/docker
-  #     - /srv/input
-  #   volumes:
-  #     - /tmp/cache:/cache
-
-  ## Build Matlab extension on remote machine
+  ## Build Matlab python package on remote machine
   build_matlab:
     image: amarburg/remote-compile:latest
     hosts: matlab.san.apl.washington.edu
     user: matlab
     target: tempdir
-    exclude: .git/
     script:
-      - cd Deploy && make build_matlab
+      - cd Deploy && make matlab
     secrets: [ ssh_privkey ]
 
   ## Build a test docker image
@@ -28,14 +18,6 @@ pipeline:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
       - cd Deploy && docker build -t amarburg/covis-postprocess:latest -t amarburg/covis-postprocess:${DRONE_REPO_OWNER}-latest -t amarburg/covis-postprocess:${DRONE_REPO_OWNER}-${DRONE_COMMIT_SHA} .
-
-  get_test_data:
-    image: minio/mc:latest
-    volumes:
-      - /srv/input:/input
-    commands:
-      - mc config host add nas http://nas-docker.san.apl.washington.edu:9000/ "" ""
-      - cd /input && mc cp --recursive nas/covis-test-data .
 
   ## Test a docker image
   pytest_in_docker:
@@ -49,18 +31,17 @@ pipeline:
 
   ## Publish resulting image to DockerHub
   publish_docker:
-    image: docker:latest
+    image: plugins/docker
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-      - docker login -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD}
-      - docker push amarburg/covis-postprocess:latest
-      - docker push amarburg/covis-postprocess:${DRONE_REPO_OWNER}-latest
-      - docker push amarburg/covis-postprocess:${DRONE_REPO_OWNER}-${DRONE_COMMIT_SHA}
+    repo: amarburg/covis-postprocess
+    username: amarburg
+    tags:
+      - latest
+      - ${DRONE_REPO_OWNER}-latest
+      - ${DRONE_REPO_OWNER}-${DRONE_COMMIT_SHA}
     secrets:
-      - docker_username
       - docker_password
-
 
   trigger-downstream:
     image: plugins/downstream
@@ -70,14 +51,6 @@ pipeline:
       - ${DRONE_REPO_OWNER}/covis-worker
     secrets: [ downstream_token ]
 
-  # rebuild_cache:
-  #   image: drillster/drone-volume-cache:latest
-  #   rebuild: true
-  #   mount:
-  #     - /var/lib/docker
-  #     - /srv/input
-  #   volumes:
-  #     - /tmp/cache:/cache
 
   slack:
     image: plugins/slack

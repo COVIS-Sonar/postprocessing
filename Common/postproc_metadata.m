@@ -3,7 +3,6 @@ function metadata = postproc_metadata()
 % Produces a struct containing meta-information about the current COVIS
 % software:  version strings, Git tags, etc.
 %
-%
 % Inputs: n/a
 %
 % Outputs:
@@ -23,6 +22,10 @@ function metadata = postproc_metadata()
   % Default values
   metadata.gitrev='';
   metadata.gittags='';
+
+  % TODO:  There's a third option ... neither the function static_git_info
+  % exists nor is the git binary in the path.
+  % Does this code handle this case gracefully (with sufficient warnings)?
 
   if exist('static_git_info')==0
     [status,cmdout] = system('git rev-parse HEAD');

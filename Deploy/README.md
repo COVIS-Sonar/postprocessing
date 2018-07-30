@@ -7,4 +7,5 @@ list of commands.
 
 `pycovis-matlab` is Matlab-geneated helper code.
 
-`pycovis-postprocess` is "normal" (non-Matlab-generated) Python helper code.  It should be lightweight.
+`pycovis-postprocess` is "normal" (non-Matlab-generated) Python helper code.
+It should be lightweight.

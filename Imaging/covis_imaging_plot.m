@@ -32,26 +32,25 @@ json_file = p.Results.json_file;
 
 imgfile = 0;
 
-% pick a mat file, if none given
-if(isempty(matfile))
-  error("Matfile %s not specified")
-  return
-   % [mat_name, mat_path] = uigetfile(fullfile('*.mat'), ...
-   %     'Pick a COVIS MAT file');
-   % if(mat_name == 0)
-   %    return;
-   % end
-   % matfile = fullfile(mat_path, mat_name);
+if(isstruct(matfile))
+  covis = matfile;
+else
+  % pick a mat file, if none given
+  if(isempty(matfile))
+    error("Matfile %s not specified")
+    return
+  end
+
+  % check that archive dir exists
+  if(~exist(matfile))
+      error('Covis .mat file \"%s\" does not exist', matfile);
+      return;
+  end
+
+  % load the covis gridded data
+  load(matfile);
 end
 
-% check that archive dir exists
-if(~exist(matfile))
-    error('Covis .mat file \"%s\" does not exist', matfile);
-    return;
-end
-
-% load the covis gridded data
-load(matfile);
 
 if(~isfield(covis,'grid'))
    error('No grid data in covis structure');
@@ -82,6 +81,10 @@ if(~isfield(input,'isosurface'))
 end
 isosurf = input.isosurface
 
+if(Verbose)
+    fprintf('Creating isosurface plot for %s\n', covis.sweep.name);
+end
+
 if(~isfield(input,'name'))
    input.name = covis.grid.name;
 end
@@ -93,10 +96,6 @@ fig_num = input.figure;
 
 if(~isfield(input,'visible'))
    input.visible = 1;
-end
-
-if(Verbose)
-    fprintf('Creating isosurface plot for %s\n', matfile);
 end
 
 % creat figure

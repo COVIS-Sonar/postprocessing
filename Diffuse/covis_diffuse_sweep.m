@@ -1,4 +1,4 @@
-function [covis, matfile] = covis_diffuse_sweep(swp_file, outputdir, varargin)
+function matfile = covis_diffuse_sweep(swp_file, outputdir, varargin)
 %
 % Process and grid covis DIFFUSE sweep data onto a rectangular grid.
 %
@@ -60,7 +60,7 @@ global Verbose;
 
 % Check for other args
 p = inputParser;
-addParameter(p,'json_file',input_json_path('covis_image.json'),@isstring);
+addParameter(p,'json_file',input_json_path('covis_diffuse.json'),@isstring);
 addParameter(p,'metadata',0,@isstruct);
 parse(p, varargin{:})
 
@@ -69,12 +69,12 @@ parse(p, varargin{:})
 swp_dir = fullfile(swp_path, swp_name);
 
 %% On error, return matfile = ''
-matfile = "";
+matfile = '';
 covis = struct;
 
 % Create MAT output filename; check if it exists
 if(~isempty(outputdir))
-    matfile = string(fullfile(outputdir, strcat(swp_name, '.mat')));
+    matfile = char(fullfile(outputdir, strcat(swp_name, '.mat')));
     if exist(matfile,'file')
       fprintf('Warning: not overwiting %s\n', matfile);
       return
@@ -101,13 +101,13 @@ fprintf('Using sweep config file %s\n', json_file)
 
 % check that json input file exists
 if ~exist(json_file,'file')
-    fprintf('JSON input file %s does not exist\n', json_file);
+    fprintf('JSON sweep config file %s does not exist\n', json_file);
     return;
 end
 json_str = fileread(json_file);
 covis = jsondecode(json_str);
 if(strcmpi(covis.type, 'diffuse') == 0)
-    fprintf('Incorrect covis input file type\n');
+    fprintf('JSON sweep config file of incorrect type \"%s\"\n', covis.type);
     return;
 end
 
@@ -403,7 +403,6 @@ if(~exist(usr.outpath,'dir'))
 end
 
 if(~isempty(matfile))
-
   fprintf("Saving results to %s\n", matfile)
 
     if(~exist(outputdir,'dir'))

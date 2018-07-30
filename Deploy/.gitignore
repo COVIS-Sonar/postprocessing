@@ -2,3 +2,4 @@ pycovis-matlab/
 tmp/
 *.egg-info/
 __pycache__/
+output/

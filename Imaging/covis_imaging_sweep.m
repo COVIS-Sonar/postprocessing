@@ -1,4 +1,4 @@
-function [covis,matfile] = covis_imaging_sweep(swp_file, outputdir, varargin)
+function matfile = covis_imaging_sweep(swp_file, outputdir, varargin)
 %
 % Process and grid covis IMAGING sweep data onto a rectangular grid.
 %
@@ -80,17 +80,19 @@ parse(p, varargin{:})
 swp_dir = fullfile(swp_path, swp_name);
 
 %% On error, return matfile = ''
-matfile = "";
+matfile = '';
 covis = struct;
 
 % Create MAT output filename; check if it exists
 if(~isempty(outputdir))
-    matfile = fullfile(outputdir, strcat(swp_name, '.mat'));
+    matfile = char(fullfile(outputdir, strcat(swp_name, '.mat')));
     if exist(matfile,'file')
       fprintf('Warning: not overwiting %s\n', matfile);
-      return
+      return ;
   end
 end
+
+fprintf("a\n")
 
 % parse sweep.json file in data archive
 swp_file = fullfile(swp_dir, 'sweep.json');
@@ -105,6 +107,9 @@ swp = jsondecode(json_str);
 % set sweep path and name
 swp.path = swp_path;
 swp.name = swp_name;
+
+fprintf("b\n")
+
 
 % parsing the json input file for the user supplied parameters
 json_file = p.Results.json_file
@@ -138,6 +143,9 @@ dsp = covis.processing;
 bfm = covis.processing.beamformer;
 cal = covis.processing.calibrate;
 filt = covis.processing.filter;
+
+fprintf("c\n")
+
 
 % check outpath
 if(~isfield(usr,'outpath'))
@@ -374,9 +382,11 @@ covis.processing.calibrate = cal;
 covis.processing.filter = filt;
 covis.burst = burst;
 
+fprintf("m\n")
+
+
 % save covis structure in a mat file for later use
 if(~isempty(matfile))
-
   fprintf("Saving results to %s\n", matfile)
 
     if(~exist(outputdir,'dir'))
@@ -387,5 +397,8 @@ if(~isempty(matfile))
 
     save(matfile,'covis');
 end
+
+fprintf("n\n")
+
 
 end

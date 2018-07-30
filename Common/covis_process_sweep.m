@@ -82,11 +82,11 @@ addParameter(p,'metadata',0,@isstruct);
 parse(p, varargin{:})
 
 % Extract a COVIS archive, if it hasn't been unpacked already
-[swp_path, swp_name] = covis_extract(filename, '');
-swp_dir = fullfile(swp_path, swp_name);
+[swp_dir, swp_name] = covis_extract(filename, '');
+swp_path= fullfile(swp_dir, swp_name);
 
 % parse sweep.json file in data archive
-json_str = fileread(fullfile(swp_dir, 'sweep.json'));
+json_str = fileread(fullfile(swp_path, 'sweep.json'));
 sweep = parse_json(json_str);
 
 % Process and plot the sweep depending on mode
@@ -96,12 +96,12 @@ switch(lower(sweep.mode))
     case {'imaging', 'dockimaging'}
         % json_proc_file = fullfile('input','covis_image.json');
         % covis = covis_imaging_sweep_kgb(swp_path, swp_name, json_proc_file);
-        [covis,matfile] = covis_imaging_sweep(swp_dir, outputdir, varargin{:});
+        matfile = covis_imaging_sweep(swp_path, outputdir, varargin{:});
 
         % diffuse mode
     case {'diffuse', 'dockdiffuse', 'sonartest'}
         % json_proc_file = fullfile('input','covis_diffuse.json');
-        %[covis] = covis_diffuse_sweep_xgy(swp_path, swp_name, json_proc_file);
+        matfile = covis_diffuse_sweep(swp_path, outputdir, varargin{:});
 
         % doppler mode
     case {'doppler', 'dockdoppler'}
@@ -119,6 +119,10 @@ switch(lower(sweep.mode))
         disp('Unknown sweep mode.')
 
 end
+
+% Python wrapper doesn't handle strings properly right now.
+% Ensure matfile is a char vector (for now)
+matfile = char(matfile)
 
 % clean up by deleting the sweep directory
 % if(rm_swp_dir)

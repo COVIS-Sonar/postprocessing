@@ -1,6 +1,6 @@
 
 
-IMAGE = amarburg/covis-postprocess:latest
+IMAGE = amarburg/covis-postprocess:R2018a
 
 help:
 	@echo "make matlab          Use Matlab compiler to build Python package 'pycovis-postprocess'"
@@ -24,9 +24,9 @@ push: build
 test: build
 	mkdir -p output/
 	docker run --rm \
-						-v $(shell pwd)/covis-test-data/old-covis-nas1/raw/2011/10/01/:/input \
+						-v $(shell pwd)/../covis-test-data/old-covis-nas1/raw/2011/10/01/:/input \
 						-v $(shell pwd)/output:/output \
-						${IMAGE} -m pytest
+						${IMAGE} -m pytest --capture=no
 
 
 
@@ -38,7 +38,7 @@ version: build
 imaging: build
 	mkdir -p output/
 	docker run --rm \
-					-v $(shell pwd)/covis-test-data/old-covis-nas1/raw/2011/10/01/:/input \
+					-v $(shell pwd)/../covis-test-data/old-covis-nas1/raw/2011/10/01/:/input \
 					-v $(shell pwd)/output:/output \
  					${IMAGE} scripts/process_sweep.py
 
@@ -56,20 +56,28 @@ MCC=mcc
 matlab: pycovis-matlab/setup.py
 
 GITREV=${shell git rev-parse HEAD }
-GITTAG=${shell git describe --tags }
+GITTAG=${shell git describe --tags --exact-match }
 
-tmp/static_git_info.m:
+## How write a Makefile rule which will only rebuild if the Git commit has changed?
+tmp/static_git_info.m: ../.git/index
 	mkdir -p tmp/
 	echo "function [gitinfo] = static_git_info()" > $@
 	printf "   gitinfo = struct;\n" >> $@
-	printf "   gitinfo.gitrev = \'%s\';\n" ${GITREV} >> $@
-	printf "   gitinfo.gittags = \'%s\';\n" ${GITTAG} >> $@
-	printf "   gitinfo.dockertag = \'%s\';\n" ${IMAGE} >> $@
+	printf "   gitinfo.gitrev = '%s';\n" ${GITREV} >> $@
+	printf "   gitinfo.gittags = '%s';\n" ${GITTAG} >> $@
+	printf "   gitinfo.dockertag = '%s';\n" ${IMAGE} >> $@
+
+	cat $@
 
 
-pycovis-matlab/setup.py: ${COVIS_REPO}/Common/*.m ${COVIS_REPO}/Imaging/*.m tmp/static_git_info.m
+MFILES = ${COVIS_REPO}/Common/*.m \
+					${COVIS_REPO}/Imaging/*.m \
+					${COVIS_REPO}/Diffuse/*.m \
+					${COVIS_REPO}/Doppler/*.m
+
+pycovis-matlab/setup.py: ${MFILES} tmp/static_git_info.m
 	mkdir -p pycovis-matlab/
-	${MCC} -v -d pycovis-matlab/ -W python:pycovis.matlab -T link:lib $^
+	${MCC} -v -w enable -d pycovis-matlab/ -W python:pycovis.matlab -T link:lib $^
 	cp -r $(COVIS_INPUT) pycovis-matlab/
 
 
@@ -77,4 +85,4 @@ clean:
 		rm -rf pycovis-matlab/ tmp/
 
 
-.PHONY: build force_build test help matlab version imaging clean tmp/static_git_info.m
+.PHONY: build force_build test help matlab version imaging clean

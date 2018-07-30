@@ -36,20 +36,26 @@ parse(p, varargin{:})
 
 json_file = p.Results.json_file;
 
-% pick a mat file, if none given
-if(isempty(matfile))
-  error("Matfile %s not specified")
-  return
-end
+if(isstruct(matfile))
+  covis=matfile
+else
 
-% check that archive dir exists
-if(~exist(matfile))
-    error('Covis .mat file \"%s\" does not exist', matfile);
-    return;
-end
+  % pick a mat file, if none given
+  if(isempty(matfile))
+    error("Matfile %s not specified")
+    return
+  end
 
-% load the covis gridded data
-load(matfile);
+  % check that archive dir exists
+  if(~exist(matfile))
+      error('Covis .mat file \"%s\" does not exist', matfile);
+      return;
+  end
+
+  % load the covis gridded data
+  load(matfile)
+
+end
 
 
 json_str = fileread(json_file);
