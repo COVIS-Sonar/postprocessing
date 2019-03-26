@@ -1,9 +1,19 @@
 
+# Data Format
+
+The COVIS output data format is described in [CovisDataFormat.md](CovisDataFormat.md)
+
 
 # Software Repositories
 
-The COVIS post-processing software is stored in three public GitHub repositories.  Of these,
-_only_ [COVIS-Sonar/covis-postprocessing](https://github.com/COVIS-Sonar/postprocessing) is required for post-processing / analyzing data in Matlab.  The other two repositories ([docker-matlab-runtime](https://github.com/amarburg/docker-matlab-runtime) and [covis-worker](https://github.com/COVIS-Sonar/covis-worker)) are used to run post-processing jobs at scale in a computer cluster.
+The COVIS post-processing software is stored in three public GitHub
+repositories.  Of these, _only_
+[COVIS-Sonar/covis-postprocessing](https://github.com/COVIS-Sonar/postprocessing)
+is required for post-processing / analyzing data in Matlab.  The other
+two repositories
+([docker-matlab-runtime](https://github.com/amarburg/docker-matlab-runtime)
+and [covis-worker](https://github.com/COVIS-Sonar/covis-worker)) are used to
+run post-processing jobs at scale in a computer cluster.
 
 The relationship between these three repos is shown below.
 
