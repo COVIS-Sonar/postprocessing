@@ -1,0 +1,75 @@
+{
+    "type": "imaging",
+    "comments": "ASHES at Axial",
+
+    "user": {
+        "verbose": 2,
+        "debug": 0,
+        "view": {
+            "azimuth": 37.5,
+            "elevation": 30.0
+        },
+        "outpath": "nan"
+
+    },
+
+    "sonar": {
+        "position": {
+            "easting": 0,
+            "northing": 0,
+            "depth": -1500,
+            "altitude": 4.2,
+            "declination": 16.0,
+            "heading": 0 
+        }
+    },
+
+    "processing": {
+        "beamformer": {
+           "type": "fast"
+        },
+        "calibrate": {
+           "mode": "VSS"
+        },
+        "filter": {
+           "status": "on",
+           "type": "butterworth",
+           "bw": 2,
+           "order": 4,
+           "decimation": 1
+        },
+        "ping_combination": {
+           "mode": "diff"
+        },
+        "bounds": {
+            "pitch": {
+                "start": -20,
+                "stop": 62
+            },
+            "heading": {
+                "start": 0,
+                "stop": 0
+            },
+            "range": {
+                "start": 0,
+                "stop": 0
+            }
+        }
+    },
+
+    "grid": {
+        "type": "backscatter-cross-section", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "1/meters"
+        },
+        "dimensions": 3,
+        "bounds": {
+            "xmin": -40, "xmax": 20,
+            "ymin": -40, "ymax": 20, "zmin": 0, "zmax": 20},
+        "spacing": {
+            "dx": 0.25, "dy": 0.25, "dz": 0.25        }
+    }
+
+}
