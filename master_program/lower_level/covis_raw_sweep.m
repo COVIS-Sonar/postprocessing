@@ -3,6 +3,7 @@
 % Matlab structure array
 
 % version 1.0 by guangyux@uw.edu (Oct 18th, 2019)
+%  - based on the code written by Chris Jones in 2010
 
 function covis = covis_raw_sweep(raw_path,raw_name,fig)
 % Input:
