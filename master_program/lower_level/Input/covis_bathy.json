@@ -1,0 +1,79 @@
+{
+    "type": "bathy",
+    "comments": "ASHES at Axial",
+
+    "user": {
+        "verbose": 1,
+        "debug": 0,
+        "view": {
+            "azimuth": 0.0,
+            "elevation": 0.0
+        },
+        "outpath": "nan"
+
+    },
+
+    "sonar": {
+        "position": {
+            "easting": 0.0,
+            "northing": 0.0,
+            "depth": -1500,
+            "altitude": 4.2,
+            "declination": 16.0,
+            "heading": 0.0 
+        }
+    },
+
+    "processing": {
+        "bathy": {
+           "thresh": -20        },
+        "beamformer": {
+           "type": "fast"
+        },
+        "calibrate": {
+           "mode": "TS-Fan"
+        },
+        "filter": {
+           "status": "on",
+           "type": "butterworth",
+           "bw": 4,
+           "order": 4,
+           "decimation": 1
+        },
+        "ping_combination": {
+           "mode": "intensity"
+        },
+        "bounds": {
+            "pitch": {
+                "start": -60,
+                "stop": 20            },
+            "heading": {
+                "start": 0.0,
+                "stop": 0.0
+            },
+            "range": {
+                "start": 0.0,
+                "stop": 0.0
+            }
+        }
+    },
+
+    "grid": {
+        "type": "bathy", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "1/meters"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 20,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+    }
+
+
+}
