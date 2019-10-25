@@ -185,6 +185,10 @@ while abs(json.hdr.sample_rate-34482)>1 && ind<=length(json_file)
     json = parse_json(json_str);
 end
 
+if (json.hdr.sample_rate-34482)>1
+    error('processing of sweep %s aborted due to corrupted header files',swp_name)
+end
+
 % numbers of samples in correlation window and window overlap
 fsamp = json.hdr.sample_rate;
 cwsize = round(fsamp*window_size);

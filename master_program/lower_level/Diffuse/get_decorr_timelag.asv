@@ -15,9 +15,9 @@
 
 % Example
 swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Diffuse_flow\2019';
-swp_name = 'COVIS-20190830T003233-diffuse2';
+swp_name = 'COVIS-20190830T003002-diffuse1';
 json_file = 0;
-timelag = [0.25:0.25:8];
+lag = [0.25:0.25:2];
 
 %% Initialization
 
@@ -317,14 +317,11 @@ end
 
 % loop over pings again to form ping-ping decorrelation
 ping_rate = png(1).hdr.max_ping_rate;
-nlag_t = floor(timelag*ping_rate);
+nlag_t = floor(time_lag*ping_rate);
 cov_t = nan(0);
-E1_t = nan(0);
-E2_t = nan(0);
-I_t2 = nan(0);
 decor_out = nan(0);
 for e = 1:length(nlag_t)
-    nlag = nlag_t(e);
+    nlag = nlag_t(1);
     for np = 1:size(bf_sig_t,3)-nlag
         bf_sig1 = bf_sig_t(:,:,np);
         bf_sig2 = bf_sig_t(:,:,np+nlag);
@@ -355,15 +352,11 @@ for e = 1:length(nlag_t)
         
         % save the quanities of interest
         cov_t(:,:,np) = cov;
-        E1_t(:,:,np) = E1;
-        E2_t(:,:,np) = E2;
-        I_t2(:,:,np) = I2;
         clear data1 data2
     end
     
     
     % average
-    I_av2 = nanmean(I_t2,3);
     cor_av = abs(nansum(cov_t,3))./sqrt(nansum(E1_t,3).*nansum(E2_t,3));
     
     
@@ -379,7 +372,6 @@ for e = 1:length(nlag_t)
     
     
     % mask out data points with low snr
-    snr2 = 10*log10(I_av2./I_noise2);
     cor_av(snr2<snr_thresh) = nan;
     
     % Find seafloor origins of acoustic backscatter
@@ -411,6 +403,7 @@ for e = 1:length(nlag_t)
     y_out2 = zeros(length(rc),length(azim));
     
     for j = 1:length(azim)
+        
         % receiver coordinates of a pseudo plane perpendicular along the beam
         azim1 = azim(j);
         xr = range(:)*cos(ver_beam)*sin(azim1);
@@ -458,7 +451,6 @@ for e = 1:length(nlag_t)
         
     end
     
-    grd = covis.grid{2};
     [decor_av, w] = l2grid(x_out2, y_out2, 1-cor_av, grd.x, grd.y, grd.v, grd.w);
     ii = find(w);
     decor_av(ii) = decor_av(ii)./w(ii);
