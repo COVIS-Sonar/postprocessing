@@ -36,24 +36,24 @@ pytest: build
 	docker run --rm \
 						-v $(shell pwd)/../TestData/:/input \
 						-v $(shell pwd)/pytest_output:/output \
-						${IMAGE_TAG} -m pytest
+						${IMAGE_TAG} --workdir pycovis-postprocess -m pytest
 
 
 #== Some examples of running python scripts in the Docker image... ==
 version: build
-	docker run -i --rm ${IMAGE} scripts/version.py
+	docker run -i --rm ${IMAGE} covis_version.py
 
 imaging: build
 	mkdir -p output/
 	docker run --rm \
 					-v $(shell pwd)/../TestData/:/input \
 					-v $(shell pwd)/pytest_output:/output \
- 					${IMAGE} scripts/process_sweep.py
+ 					${IMAGE} covis_process.py
 
 ##== Tasks which run the Python library locally ==
 
-MATLAB_INSTALL ?= /usr/local/MATLAB/R2019b
-MATLAB_LD_LIBRARY_PATH=$(MATLAB_INSTALL)/runtime/glnxa64:$(MATLAB_INSTALL)/bin/glnxa64:$(MATLAB_INSTALL)/sys/os/glnxa64:$(MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/native_threads:$(MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/server:$(MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64
+LOCAL_MATLAB_INSTALL ?= /usr/local/MATLAB/R2019b
+MATLAB_LD_LIBRARY_PATH=$(LOCAL_MATLAB_INSTALL)/runtime/glnxa64:$(LOCAL_MATLAB_INSTALL)/bin/glnxa64:$(LOCAL_MATLAB_INSTALL)/sys/os/glnxa64:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/native_threads:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/server:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64
 
 LOCAL_MATLAB_ENV = 	LD_LIBRARY_PATH=$(MATLAB_LD_LIBRARY_PATH):$(LD_LIBRARY_PATH) \
 		PYTHONPATH=$(shell pwd)/pycovis-matlab:$(shell pwd)/pycovis-postprocess
@@ -62,10 +62,10 @@ local_pytest:
 		${LOCAL_MATLAB_ENV} cd pycovis-postprocess && python3 -m pytest
 
 local_version:
-		${LOCAL_MATLAB_ENV} cd pycovis-postprocess && python3 scripts/version.py
+		${LOCAL_MATLAB_ENV} python3 covis_version.py
 
 local_test_process:
-		${LOCAL_MATLAB_ENV} cd pycovis-postprocess && python3 scripts/process.py COVIS-20191024T003346-diffuse3.tar.gz
+		${LOCAL_MATLAB_ENV} python3 covis_process.py /input/COVIS-20191024T003346-diffuse3.tar.gz
 
 
 

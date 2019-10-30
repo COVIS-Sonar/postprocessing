@@ -11,7 +11,7 @@ The general steps are:
     * Running `make pytest` will execute the Python test suite found in `test/` _in the Docker image._   
     * Similarly, `make version` will run the simple Python+Matlab script `scripts/version.py` _in the Docker image._
 
-Alternatively, one the Python library has been built, it can be executed on the local machine _if Matlab or the Matlab runtime are installed._     The Makefile jobs `make local_pytest` and `make local_version` are the local equivalents to `mae pytest / version` above.
+Alternatively, once the `pycovis-matlab` library has been built, it can be executed on the local machine _if Matlab or the Matlab runtime are installed._   The LOCAL_MATLAB_INSTALL env variable my need to be set (it defaults to `/usr/local/MATLAB/R{current Matlab version}`)    The Makefile jobs `make local_pytest` and `make local_version` are the local equivalents to `mae pytest / version` above.
 
 
 All tasks are scripted in the `Makefile`.   Run `make help` to get a list of all commands.
