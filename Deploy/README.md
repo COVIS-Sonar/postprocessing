@@ -20,4 +20,7 @@ All tasks are scripted in the `Makefile`.   Run `make help` to get a list of all
 
 `pycovis-matlab` is the Matlab compiler-generated helper code.
 
-`pycovis-postprocess` is "normal" (non-Matlab-generated) Python wrapper around `pycovis-matlab`.  It should be lightweight.
+`pycovis-postprocess` is "normal" (non-Matlab-generated) Python wrapper around `pycovis-matlab`.  It should be lightweight.  It contains:
+
+   * `scripts/` which are Python script entrypoints for common tasks.
+   * `test/` is a unit test suite.
