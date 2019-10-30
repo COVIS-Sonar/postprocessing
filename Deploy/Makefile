@@ -7,8 +7,8 @@ help:
 	@echo "make matlab          Use Matlab compiler to build Python package 'pycovis-postprocess'"
 	@echo
 	@echo "== Python tasks run in the Docker image =="
-	@echo "make build           Build the docker image"
-	@echo "make force_build     Build the docker image with --no-cache"
+	@echo "make docker           Build the docker image"
+	@echo "make force_docker     Build the docker image with --no-cache"
 	@echo "make push            Push the docker image to DockerHub"
 	@echo "make test            Run pytest in the docker image"
 	@echo "make version         Demo which runs scripts/version.py in the Docker image"
@@ -22,22 +22,33 @@ help:
 
 
 #== Tasks related to building and testing Docker scripts ==
-build:  #pycovis-matlab/setup.py pycovis-postprocess/pycovis/postprocess/*.py
+docker:  #pycovis-matlab/setup.py pycovis-postprocess/pycovis/postprocess/*.py
 	docker build --tag ${IMAGE_TAG} .
 
-force_build: pycovis-matlab/setup.py
+force_docker: pycovis-matlab/setup.py
 	docker build --tag ${IMAGE_TAG} --no-cache .
 
 push: build
 	docker push ${IMAGE_TAG}
 
-test: build
-	mkdir -p output/
+pytest: build
+	mkdir -p pytest_output/
 	docker run --rm \
-						-v $(shell pwd)/../Test/covis-test-data/old-covis-nas1/raw/2011/10/01/:/input \
-						-v $(shell pwd)/output:/output \
+						-v $(shell pwd)/../TestData/:/input \
+						-v $(shell pwd)/pytest_output:/output \
 						${IMAGE_TAG} -m pytest
 
+
+#== Some examples of running python scripts in the Docker image... ==
+version: build
+	docker run -i --rm ${IMAGE} scripts/version.py
+
+imaging: build
+	mkdir -p output/
+	docker run --rm \
+					-v $(shell pwd)/../TestData/:/input \
+					-v $(shell pwd)/pytest_output:/output \
+ 					${IMAGE} scripts/process_sweep.py
 
 ##== Tasks which run the Python library locally ==
 
@@ -48,25 +59,14 @@ LOCAL_MATLAB_ENV = 	LD_LIBRARY_PATH=$(MATLAB_LD_LIBRARY_PATH):$(LD_LIBRARY_PATH)
 		PYTHONPATH=$(shell pwd)/pycovis-matlab:$(shell pwd)/pycovis-postprocess
 
 local_pytest:
-		${LOCAL_MATLAB_ENV} python3 -m pytest
+		${LOCAL_MATLAB_ENV} cd pycovis-postprocess && python3 -m pytest
 
 local_version:
-		${LOCAL_MATLAB_ENV} python3 scripts/version.py
+		${LOCAL_MATLAB_ENV} cd pycovis-postprocess && python3 scripts/version.py
 
 local_test_process:
-		${LOCAL_MATLAB_ENV} python3 scripts/process.py COVIS-20191024T003346-diffuse3.tar.gz
+		${LOCAL_MATLAB_ENV} cd pycovis-postprocess && python3 scripts/process.py COVIS-20191024T003346-diffuse3.tar.gz
 
-
-#== Some examples of running python scripts in the Docker image... ==
-version: build
-	docker run -i --rm ${IMAGE} scripts/version.py
-
-imaging: build
-	mkdir -p output/
-	docker run --rm \
-					-v $(shell pwd)/covis-test-data/old-covis-nas1/raw/2011/10/01/:/input \
-					-v $(shell pwd)/output:/output \
- 					${IMAGE} scripts/process_sweep.py
 
 
 ##== Matlab packaging rules. ==

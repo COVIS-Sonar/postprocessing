@@ -24,7 +24,7 @@ RUN pip3 install -e .
 COPY test                /root/test
 COPY scripts             /root/scripts
 
-WORKDIR /root
+WORKDIR /root/pycovis-postprocess
 RUN  ln -s /root/pycovis-matlab/Inputs .
 
 VOLUME  /input
