@@ -1,4 +1,4 @@
-FROM amarburg/matlab-runtime:latest
+FROM amarburg/matlab-runtime:2019b
 
 RUN apt-get update && apt-get install -y python3 python3-pip libgl1-mesa-dev libxt-dev
 
@@ -25,7 +25,7 @@ COPY test                /root/test
 COPY scripts             /root/scripts
 
 WORKDIR /root
-RUN  ln -s /root/pycovis-matlab/input .
+RUN  ln -s /root/pycovis-matlab/Inputs .
 
 VOLUME  /input
 VOLUME  /output

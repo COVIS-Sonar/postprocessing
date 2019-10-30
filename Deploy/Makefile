@@ -1,34 +1,60 @@
 
 
-IMAGE = amarburg/covis-postprocess:latest
+IMAGE_TAG = amarburg/covis-postprocess:latest
+
 
 help:
 	@echo "make matlab          Use Matlab compiler to build Python package 'pycovis-postprocess'"
+	@echo
+	@echo "== Python tasks run in the Docker image =="
 	@echo "make build           Build the docker image"
 	@echo "make force_build     Build the docker image with --no-cache"
 	@echo "make push            Push the docker image to DockerHub"
 	@echo "make test            Run pytest in the docker image"
 	@echo "make version         Demo which runs scripts/version.py in the Docker image"
+	@echo
+	@echo "== Python tasks run locally (requires Matlab or Matlab runtime) =="
+	@echo
+	@echo "make local_pytest"
+	@echo "make local_version"
+	@echo "make local_test_process"
+
 
 
 #== Tasks related to building and testing Docker scripts ==
-build:       pycovis-matlab/setup.py pycovis-postprocess/pycovis/postprocess/*.py
-	docker build --tag ${IMAGE} .
+build:  #pycovis-matlab/setup.py pycovis-postprocess/pycovis/postprocess/*.py
+	docker build --tag ${IMAGE_TAG} .
 
 force_build: pycovis-matlab/setup.py
-	docker build --tag ${IMAGE} --no-cache .
+	docker build --tag ${IMAGE_TAG} --no-cache .
 
 push: build
-	docker push ${IMAGE}
+	docker push ${IMAGE_TAG}
 
 test: build
 	mkdir -p output/
 	docker run --rm \
-						-v $(shell pwd)/covis-test-data/old-covis-nas1/raw/2011/10/01/:/input \
+						-v $(shell pwd)/../Test/covis-test-data/old-covis-nas1/raw/2011/10/01/:/input \
 						-v $(shell pwd)/output:/output \
-						${IMAGE} -m pytest
+						${IMAGE_TAG} -m pytest
 
 
+##== Tasks which run the Python library locally ==
+
+MATLAB_INSTALL ?= /usr/local/MATLAB/R2019b
+MATLAB_LD_LIBRARY_PATH=$(MATLAB_INSTALL)/runtime/glnxa64:$(MATLAB_INSTALL)/bin/glnxa64:$(MATLAB_INSTALL)/sys/os/glnxa64:$(MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/native_threads:$(MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/server:$(MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64
+
+LOCAL_MATLAB_ENV = 	LD_LIBRARY_PATH=$(MATLAB_LD_LIBRARY_PATH):$(LD_LIBRARY_PATH) \
+		PYTHONPATH=$(shell pwd)/pycovis-matlab:$(shell pwd)/pycovis-postprocess
+
+local_pytest:
+		${LOCAL_MATLAB_ENV} python3 -m pytest
+
+local_version:
+		${LOCAL_MATLAB_ENV} python3 scripts/version.py
+
+local_test_process:
+		${LOCAL_MATLAB_ENV} python3 scripts/process.py COVIS-20191024T003346-diffuse3.tar.gz
 
 
 #== Some examples of running python scripts in the Docker image... ==
@@ -50,7 +76,6 @@ imaging: build
 ## runtime in the image?
 
 COVIS_REPO=..
-COVIS_INPUT=${COVIS_REPO}/Common/input
 MCC=mcc
 
 matlab: pycovis-matlab/setup.py
@@ -58,19 +83,22 @@ matlab: pycovis-matlab/setup.py
 GITREV=${shell git rev-parse HEAD }
 GITTAG=${shell git describe --tags }
 
+COVIS_CODE = $(shell find ${COVIS_REPO}/master_program/ -name *.m) \
+					 	 $(shell find ${COVIS_REPO}/ThirdParty/ -name *.m)
+
 tmp/static_git_info.m:
 	mkdir -p tmp/
 	echo "function [gitinfo] = static_git_info()" > $@
 	printf "   gitinfo = struct;\n" >> $@
-	printf "   gitinfo.gitrev = \'%s\';\n" ${GITREV} >> $@
-	printf "   gitinfo.gittags = \'%s\';\n" ${GITTAG} >> $@
-	printf "   gitinfo.dockertag = \'%s\';\n" ${IMAGE} >> $@
+	printf "   gitinfo.gitrev = '%s';\n" ${GITREV} >> $@
+	printf "   gitinfo.gittags = '%s';\n" ${GITTAG} >> $@
+	printf "   gitinfo.dockertag = '%s';\n" ${IMAGE} >> $@
 
 
-pycovis-matlab/setup.py: ${COVIS_REPO}/Common/*.m ${COVIS_REPO}/Imaging/*.m tmp/static_git_info.m
-	mkdir -p pycovis-matlab/
+pycovis-matlab/setup.py: $(COVIS_CODE) tmp/static_git_info.m
+	mkdir -p pycovis-matlab/Input
 	${MCC} -v -d pycovis-matlab/ -W python:pycovis.matlab -T link:lib $^
-	cp -r $(COVIS_INPUT) pycovis-matlab/
+	cp -r ${COVIS_REPO}/master_program/Inputs pycovis-matlab/
 
 
 clean:
