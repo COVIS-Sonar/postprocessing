@@ -1,5 +1,5 @@
-% This function is used to process the compressed raw data recorded in 
-% various modes of COVIS to generate gridded data and save the output in a 
+% This function is used to process the compressed raw data recorded in
+% various modes of COVIS to generate gridded data and save the output in a
 % Matlab structure array
 
 % version 1.0 by guangyux@uw.edu (Oct 18th, 2019)
@@ -45,6 +45,7 @@ switch swp_type
                 fprintf(sprintf('cannot remove %s \n',swp_name));
             end
         end
+
         try
             rmdir(fullfile(raw_path,swp_name),'s');
         catch
@@ -54,8 +55,9 @@ switch swp_type
         disp(['now processing diffuse-flow file: ',swp_name])
         try
             covis = covis_diffuse_sweep(raw_path,swp_name,0,fig);
-        catch
+        catch ME
             disp(['Bad sweep:',swp_name])
+            warning(['Exception: ', ME.message, ' at ', ME.stack(1).file, ' line ', int2str(ME.stack(1).line) ])
             try
                 rmdir(fullfile(raw_path,swp_name),'s');
             catch
@@ -90,9 +92,3 @@ switch swp_type
         disp(['unrecognized data type:',swp_name])
 end
 end
-
-
-
-
-
-
