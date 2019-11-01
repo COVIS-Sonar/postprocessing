@@ -16,8 +16,8 @@ unittest: covis_test_data
 integrationtest: covis_test_data
 	cd Test/Integration/ && matlab -nodisplay -nosplash -r "  addpath(${ALL_MATLAB_PATHS}); result = runtests(); disp(result); exit()"
 
-
 deps: gsw
+
 
 gsw:
 	mkdir -p master_program/ThirdParty/GSW/
