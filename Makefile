@@ -29,7 +29,7 @@ gsw:
 
 ## Rule to retrieve git test data if it doesn't exist
 testdata:
-	cd TestData && make
+	cd TestData && make download
 
 
-.PHONY: test unittest integrationtest covis_test_data deps gsw
+.PHONY: test unittest integrationtest covis_test_data deps gsw testdata
