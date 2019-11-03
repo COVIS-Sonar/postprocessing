@@ -17,8 +17,8 @@ function covis = covis_bathy_sweep(swp_path, swp_name, json_file, fig)
 % and metadata
 
 % Example:
-% swp_path = 'swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Bathy\2019';
-% swp_name = 'swp_name = 'COVIS-20190706T040730-bathy1';
+% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Bathy\2019';
+% swp_name = 'COVIS-20190706T043548-bathy3';
 % json_file = 0;
 % fig = 1;
 
@@ -82,7 +82,7 @@ swp.name = swp_name;
 % parsing the json input file for the user supplied parameters
 if isempty(json_file) || all(json_file == 0)
     % default json input file
-    json_file = 'covis_bathy.json';
+    json_file = find_input_file('covis_bathy.json');
 end
 % check that json input file exists
 if ~exist(json_file,'file')
@@ -209,30 +209,27 @@ end
 bad_ping = zeros(0);
 bad_ping_count = 0;
 nbursts = length(burst);
-xb_out = nan(0);
-yb_out = nan(0);
-zb_out = nan(0);
+burst_count = 0;
 for nb = 1:nbursts
-    
+
     if(Verbose)
         fprintf('Burst %d: pitch %0.2f\n', nb, burst(nb).pitch);
     end
-    
+
     npings = burst(nb).npings;
-    
+
     % check that there's enough pings in burst
     if((npings < 2))
         fprintf('Not enough pings in burst\n');
         continue;
     end
-    
+
     % loop over pings in a burst, read data and hold onto it
-    bf_sig_out = nan(0);
     ping_count = 0;
     for np = 1:npings
         ping_num = burst(nb).ping(np); % ping number
-        
-        
+
+
         % read the corresponding binary file
         bin_file = sprintf('rec_7038_%06d.bin',ping_num);
         if ~exist(fullfile(swp_dir,bin_file),'file')
@@ -244,12 +241,12 @@ for nb = 1:nbursts
         yaw = (pi/180) * png(ip).rot_yaw;
         pitch = (pi/180)*png(ip).sen_pitch;
         roll = (pi/180)*png(ip).sen_roll;
-        
+
         if(Verbose > 1)
             fprintf(' %s: pitch %0.2f, roll %0.2f, yaw %0.2f\n', bin_file, ...
                 pitch*180/pi, roll*180/pi, yaw*180/pi);
         end
-        
+
         % read raw element quadrature data
         try
             [hdr, data] = covis_read(fullfile(swp_dir, bin_file));
@@ -259,12 +256,13 @@ for nb = 1:nbursts
             bad_ping(bad_ping_count) = ping_num;
             continue
         end
-        
+
         ping_count = ping_count+1;
         if(ping_count == 1)
             monitor = data;
+            bf_sig_out = nan(size(data,1),size(data,2),npings);
         end
-        
+
         % Correct phase using first ping as reference
         try
             data = covis_phase_correct(png(n), monitor, data);
@@ -274,10 +272,10 @@ for nb = 1:nbursts
             bad_ping(bad_ping_count) = ping_num;
             continue
         end
-        
+
         % Apply Filter to data
         [data, filt, png(n)] = covis_filter(data, filt, png(n));
-        
+
         % define beamformer parameters
         bfm.fc = png(n).hdr.xmit_freq;
         bfm.c = c;
@@ -286,7 +284,7 @@ for nb = 1:nbursts
         bfm.last_samp = hdr.last_samp;
         bfm.start_angle = -54;
         bfm.end_angle = 54;
-        
+
         % beamform
         try
             [bfm, bf_sig] = covis_beamform(bfm, data);
@@ -295,7 +293,7 @@ for nb = 1:nbursts
             bad_ping_count = bad_ping_count+1;
             bad_ping(bad_ping_count) = ping_num;
             continue
-        end      
+        end
         bf_sig_out(:,:,np) = bf_sig;
     end
     if all(isnan(bf_sig_out(:)))
@@ -303,10 +301,17 @@ for nb = 1:nbursts
         continue
     end
     
+    burst_count = burst_count+1;
+    if burst_count == 1
+        xb_out = nan(bfm.num_beams,nbursts);
+        yb_out = nan(size(xb_out));
+        zb_out = nan(size(xb_out));
+    end
+
     bf_sig_m = nanmean(bf_sig_out,3); % averaging over pings
     snr_m = 10*log10(abs(bf_sig_m).^2./noise_floor^2); % signal to noise ratio
-    
-    
+
+
     % OSCFAR detection section
     %magnitude squared of the beamformed output
     mag2 = bf_sig_m .* conj(bf_sig_m);
@@ -317,9 +322,9 @@ for nb = 1:nbursts
     dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
     indexD = dBSCR > scrthreshold; % detected samples
     bf_sig_m(~indexD)=sqrt(min(clutter));
-    
-    
-    
+
+
+
     % calibration
     try
         bf_sig_m_cal = covis_calibration(bf_sig_m, bfm, png(n), cal,T, S, pH, lat,depth);
@@ -327,17 +332,17 @@ for nb = 1:nbursts
         fprintf('error in calibration at pitch %f\n',burst(nb).pitch);
         continue
     end
-    
+
     % target scattering coefficient
     v = abs(bf_sig_m_cal).^2;
-    
+
     % mask out data with low snr
     v(snr_m<snr_thresh) = min(v(:));
-    
+
     % transform sonar coords into world coords
     range = bfm.range;
     azim = bfm.angle;
-    
+
     % smooth the seafloor return in range
     v_filt = medfilt1(v,20);
     % loop over beams
@@ -375,7 +380,7 @@ if fig == 1
     figure
     pcolorjw(xg,yg,zb);
     axis image;
-    caxis([-1 5]);
+    caxis([-1 4]);
     xlabel('Easting of COVIS ( m )');
     ylabel('Northing of COVIS ( m )');
     h = colorbar;

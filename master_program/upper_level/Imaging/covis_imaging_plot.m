@@ -17,7 +17,8 @@ zg = covis.grid.z;
 vg = covis.grid.Id_filt;
 
 bathy_name = sprintf('covis_bathy_%s.mat',year);
-bathy = load(bathy_name);
+bathy_file = find_input_file(bathy_name);
+bathy = load(bathy_file);
 covis_bathy = bathy.covis;
 xb = covis_bathy.grid.x;
 yb = covis_bathy.grid.y;
