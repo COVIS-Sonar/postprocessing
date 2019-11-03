@@ -17,8 +17,8 @@ function covis = covis_bathy_sweep(swp_path, swp_name, json_file, fig)
 % and metadata
 
 % Example:
-% swp_path = 'swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Bathy\2019';
-% swp_name = 'swp_name = 'COVIS-20190706T040730-bathy1';
+% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Bathy\2019';
+% swp_name = 'COVIS-20190706T043548-bathy3';
 % json_file = 0;
 % fig = 1;
 
@@ -209,9 +209,7 @@ end
 bad_ping = zeros(0);
 bad_ping_count = 0;
 nbursts = length(burst);
-xb_out = nan(0);
-yb_out = nan(0);
-zb_out = nan(0);
+burst_count = 0;
 for nb = 1:nbursts
 
     if(Verbose)
@@ -227,7 +225,6 @@ for nb = 1:nbursts
     end
 
     % loop over pings in a burst, read data and hold onto it
-    bf_sig_out = nan(0);
     ping_count = 0;
     for np = 1:npings
         ping_num = burst(nb).ping(np); % ping number
@@ -263,6 +260,7 @@ for nb = 1:nbursts
         ping_count = ping_count+1;
         if(ping_count == 1)
             monitor = data;
+            bf_sig_out = nan(size(data,1),size(data,2),npings);
         end
 
         % Correct phase using first ping as reference
@@ -301,6 +299,13 @@ for nb = 1:nbursts
     if all(isnan(bf_sig_out(:)))
         fprintf('no valid pings at pitch %f\n',burst(nb).pitch);
         continue
+    end
+    
+    burst_count = burst_count+1;
+    if burst_count == 1
+        xb_out = nan(bfm.num_beams,nbursts);
+        yb_out = nan(size(xb_out));
+        zb_out = nan(size(xb_out));
     end
 
     bf_sig_m = nanmean(bf_sig_out,3); % averaging over pings
@@ -375,7 +380,7 @@ if fig == 1
     figure
     pcolorjw(xg,yg,zb);
     axis image;
-    caxis([-1 5]);
+    caxis([-1 4]);
     xlabel('Easting of COVIS ( m )');
     ylabel('Northing of COVIS ( m )');
     h = colorbar;

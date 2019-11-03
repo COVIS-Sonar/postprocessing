@@ -15,7 +15,7 @@ function [covis] = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 
 % Example
 % swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Diffuse_flow\2019';
-% swp_name = 'COVIS-20190830T003002-diffuse1';
+% swp_name = 'COVIS-20190731T003500-diffuse3';
 % json_file = 0;
 % fig = 1;
 
@@ -64,7 +64,8 @@ avg_win(3) = 19.25;
 
 % bathymetry data directory
 bathy_name = sprintf('covis_bathy_%s.mat',year);
-bathy = load(bathy_name);
+bathy_file = find_input_file(bathy_name);
+bathy = load(bathy_file);
 
 
 
@@ -228,7 +229,7 @@ yaw = (pi/180) * png(1).rot_yaw;
 % Loop over ping files
 bad_ping = zeros(0);
 bad_ping_count = 0;
-data = nan(0);
+count = 0;
 for np=1:size(csv,1)
     ping_num = png(np).num;
     bin_file = sprintf('rec_7038_%06d.bin',ping_num);
@@ -250,13 +251,18 @@ for np=1:size(csv,1)
 
     % read raw element quadrature data
     try
-        [hdr, data(:,:,np)] = covis_read(fullfile(swp_dir, bin_file));
+        [hdr, data1] = covis_read(fullfile(swp_dir, bin_file));
     catch
         fprintf('error reading ping %d\n',ping_num);
         bad_ping_count = bad_ping_count + 1;
         bad_ping(bad_ping_count) = ping_num;
         continue;
     end
+    count = count+1;
+    if count == 1
+        data = nan(size(data1,1),size(data1,2),size(csv,1));
+    end
+    data(:,:,np) = data1;
 end   % End loop on pings
 if bad_ping_count>max_bad_ping_count
     error('number of bad pings (%d) exceeds the threshold (%d)\n',bad_ping_count,max_bad_ping_count);
@@ -264,13 +270,9 @@ end
 
 % Loop again on pings to calculate backscatter intensity and
 % scintillation parameters
-cov_t = nan(0);
-E1_t = nan(0);
-E2_t = nan(0);
-I_t1 = nan(0);
-I_t2 = nan(0);
-Isq_t = nan(0);
-bf_sig_t = nan(0);
+I_t1 = nan(size(data));
+Isq_t = nan(size(data));
+bf_sig_t = nan(size(data));
 data0 = data(:,:,1);
 for np = 1:size(data,3)
     if all(isnan(data0(:)))
@@ -328,12 +330,28 @@ end
 
 % loop over pings again to form ping-ping decorrelation
 for np = 1:size(bf_sig_t,3)-nlag
+    
+    % pair of pings used
     bf_sig1 = bf_sig_t(:,:,np);
     bf_sig2 = bf_sig_t(:,:,np+nlag);
-
+    
     % get range and azimuthal angles
     range = bfm.range;
     azim = bfm.angle;
+    
+    % calculate the target strength corresponding to the noise floor
+    if np==1
+        bf_sig_noise = noise_floor*ones(size(bf_sig1));
+        bf_sig_noise = covis_calibration(bf_sig_noise,bfm,png(n),cal,T,S,pH,lat,depth);
+        [~, E1_noise,E2_noise, ~] = covis_covar_hamming(bf_sig_noise, bf_sig_noise, range, cwsize, cwovlap);
+        I_noise1 = abs(bf_sig_noise).^2;
+        I_noise2 = sqrt(E1_noise.*E2_noise);
+        I_t2 = nan(size(I_noise2,1),size(I_noise2,2),size(data,3)-nlag);
+        cov_t = nan(size(I_t2));
+        E1_t = nan(size(I_t2));
+        E2_t = nan(size(I_t2));
+    end
+    
 
     % Correlate pings
     %  rc is the range of the center of the corr bin
@@ -344,23 +362,12 @@ for np = 1:size(bf_sig_t,3)-nlag
         continue
     end
     I2 = sqrt(E1.*E2);
-
-    % calculate the target strength corresponding to the noise floor
-    if np==1
-        bf_sig_noise = noise_floor*ones(size(bf_sig1));
-        bf_sig_noise = covis_calibration(bf_sig_noise,bfm,png(n),cal,T,S,pH,lat,depth);
-        [~, E1_noise,E2_noise, ~] = covis_covar_hamming(bf_sig_noise, bf_sig_noise, range, cwsize, cwovlap);
-        I_noise1 = abs(bf_sig_noise).^2;
-        I_noise2 = sqrt(E1_noise.*E2_noise);
-
-    end
-
+    
     % save the quanities of interest
     cov_t(:,:,np) = cov;
     E1_t(:,:,np) = E1;
     E2_t(:,:,np) = E2;
     I_t2(:,:,np) = I2;
-    clear data1 data2
 end
 
 % average

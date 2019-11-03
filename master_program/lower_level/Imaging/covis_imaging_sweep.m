@@ -4,7 +4,7 @@
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
 
-function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
+%function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 % Input:
 % swp_path: raw data directory
 % swp_name: name of raw data sweep
@@ -16,10 +16,10 @@ function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 % and metadata
 
 % Example
-%  swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Imaging\2019';
-%  swp_name = 'swp_name = 'COVIS-20190822T040001-imaging1';
-%  json_file = 0;
-%  fig = 1;
+ swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Imaging\2019';
+ swp_name = 'COVIS-20190822T040001-imaging1';
+ json_file = 0;
+ fig = 1;
 
 
 %% Initialization
@@ -212,15 +212,8 @@ elev_stop = (covis.processing.bounds.pitch.stop);
 % loop over bursts
 bad_ping = zeros(0);
 bad_ping_count = 0;
-xv_out = nan(0);
-yv_out = nan(0);
-zv_out = nan(0);
-Ia_out = nan(0);
-Id_out = nan(0);
-Ia_filt_out = nan(0);
-Id_filt_out = nan(0);
-Kp_out = nan(0);
 nbursts = length(burst);
+burst_count = 0;
 for nb = 1:nbursts
 
     % check elevation
@@ -241,13 +234,9 @@ for nb = 1:nbursts
     end
 
     % loop over pings in a burst
-    bf_sig_out = nan(0);
-    I_out = nan(0);
-    Isq_out = nan(0);
-    first_ping = 0;
+    ping_count = 0;
     for np = 1:npings
         ping_num = burst(nb).ping(np); % ping number
-
         % read the corresponding binary file
         bin_file = sprintf('rec_7038_%06d.bin',ping_num);
         if ~exist(fullfile(swp_dir,bin_file),'file')
@@ -277,9 +266,12 @@ for nb = 1:nbursts
             continue
         end
 
-        first_ping = first_ping+1;
-        if(first_ping == 1)
+        ping_count = ping_count+1;
+        if(ping_count == 1)
             monitor = data;
+            bf_sig_out = nan(size(data,1),size(data,2),npings);
+            I_out = nan(size(bf_sig_out));
+            Isq_out = nan(size(bf_sig_out));
         end
 
         % Correct phase using first ping as reference
@@ -328,7 +320,19 @@ for nb = 1:nbursts
         fprintf('no valid pings at pitch %f\n',burst(nb).pitch);
         continue
     end
-
+    
+    burst_count = burst_count+1;
+    if burst_count == 1
+        xv_out = nan(size(bf_sig,1),size(bf_sig,2),nbursts);
+        yv_out = nan(size(xv_out));
+        zv_out = nan(size(xv_out));
+        Ia_out = nan(size(xv_out));
+        Id_out = nan(size(xv_out));
+        Ia_filt_out = nan(size(xv_out));
+        Id_filt_out = nan(size(xv_out));
+        Kp_out = nan(size(xv_out));
+    end
+    
     % calculate SI
     Kp = nanmean(abs(bf_sig_out).^2,3)./nanmean(abs(bf_sig_out),3).^2-1;
 
@@ -435,4 +439,4 @@ covis.bad_ping = bad_ping;
 if fig == 1
     covis_imaging_plot(covis);
 end
-end
+%end
