@@ -15,15 +15,13 @@ unittest: covis_test_data
 integrationtest: covis_test_data
 	cd Test/Integration/ && matlab -nodisplay -nosplash -r "  addpath(${ALL_PATHS}); result = runtests(); disp(result); exit()"
 
-
 deps: gsw
 
-
 gsw:
-	mkdir -p ThirdParty/GSW/
-	cd GSW && wget http://www.teos-10.org/software/gsw_matlab_v3_06_11.zip
-	unzip gsw_matlab_v3_06_11.zip
-
+	mkdir -p master_program/ThirdParty/GSW/
+	cd master_program/ThirdParty/GSW/ && \
+		wget -nc http://www.teos-10.org/software/gsw_matlab_v3_06_11.zip && \
+		unzip -f gsw_matlab_v3_06_11.zip
 
 ## Rule to retrieve git test data if it doesn't exist
 covis_test_data:
