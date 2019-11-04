@@ -88,7 +88,8 @@ GITTAG=${shell git describe --tags }
 
 
 COVIS_CODE = $(shell find ${COVIS_REPO}/master_program/ -name *.m) \
-					 	 $(shell find ${COVIS_REPO}/master_program/ThirdParty/ -name *.m)
+					 	 $(shell find ${COVIS_REPO}/master_program/ThirdParty/ -name *.m) \
+						 $(shell find matlab/ -name *.m) 
 
 
 tmp/static_git_info.m:
