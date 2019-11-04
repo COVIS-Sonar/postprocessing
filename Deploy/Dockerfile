@@ -21,8 +21,8 @@ WORKDIR /root/pycovis-postprocess
 RUN pip3 install -e .
 
 ## Copy in the test functions
-COPY test                /root/test
-COPY scripts             /root/scripts
+#COPY test                /root/test
+#COPY scripts             /root/scripts
 
 WORKDIR /root
 RUN  ln -s /root/pycovis-matlab/Inputs .

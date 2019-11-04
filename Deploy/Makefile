@@ -25,7 +25,7 @@ help:
 docker:  #pycovis-matlab/setup.py pycovis-postprocess/pycovis/postprocess/*.py
 	docker build --tag ${IMAGE_TAG} .
 
-force_docker: pycovis-matlab/setup.py
+force_docker: #pycovis-matlab/setup.py
 	docker build --tag ${IMAGE_TAG} --no-cache .
 
 push: build
@@ -41,14 +41,14 @@ pytest: build
 
 #== Some examples of running python scripts in the Docker image... ==
 version: build
-	docker run -i --rm ${IMAGE} covis_version.py
+	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/covis_version.py
 
 imaging: build
 	mkdir -p output/
 	docker run --rm \
 					-v $(shell pwd)/../TestData/:/input \
 					-v $(shell pwd)/pytest_output:/output \
- 					${IMAGE} covis_process.py
+ 					${IMAGE_TAG} covis_process.py
 
 ##== Tasks which run the Python library locally ==
 
@@ -83,8 +83,12 @@ matlab: pycovis-matlab/setup.py
 GITREV=${shell git rev-parse HEAD }
 GITTAG=${shell git describe --tags }
 
-COVIS_CODE = $(shell find ${COVIS_REPO}/master_program/ -name *.m) \
-					 	 $(shell find ${COVIS_REPO}/ThirdParty/ -name *.m)
+
+COVIS_FUNCS = $(shell find ${COVIS_REPO}/master_program/ -name *.m) \
+					 	 $(shell find ${COVIS_REPO}/master_program/ThirdParty/ -name *.m)
+
+COVIS_CODE = $(shell ./substitute_from.py ${COVIS_FUNCS} )
+
 
 tmp/static_git_info.m:
 	mkdir -p tmp/
