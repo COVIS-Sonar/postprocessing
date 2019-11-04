@@ -62,19 +62,19 @@ alpha = franc_garr(f, T, S, pH, depth,lat)/1000; % attenuation coefficient (dB/m
 % Fixed calibration parameters
 
 switch(cal_mode)
-    
+
     case('VSS')
-        
+
         if f ~= 396000
             error('VSS calibration only available at 396 kHz');
         end
-        
+
         % Beam pattern for fan-beam transmitter, units are dB normalized
         % to 1 at boresight, and negative if response is less than at boresight,
         % which is the direction in which source level is measured.
-        
+
         xmit = load(sprintf('TC2160_Horizontal_Beam_396kHz_%d.txt',cali_year));
-        
+
         % Change ram angles to angles appropriate to beam patterns
         ram_angles = xmit(:,1);
         na = find(ram_angles > 180);
@@ -84,24 +84,24 @@ switch(cal_mode)
         %        ram_angles(na) = ram_angles(na) - 360;
         %    end
         %end
-        
+
         theta_deg = -ram_angles;
         theta = pi/180*theta_deg;
-        
+
         % Interpolate beam pattern
         %xmit_patt = linear_interp(theta,xmit(:,2),theta_bfm);
         xmit_patt = interp1(theta,xmit(:,2),theta_bfm);
-        
+
         % Source level from 2010 calibration
         % Source level table, giving source level setting and source level
         % corrected for attenuation, which is 0.2 dB at 6 m, 396 kHz
-        
+
         %sl_table = [200 , 199.6+0.2;
         %            205 , 204.5+0.2;
         %            210	, 209.1+0.2;
         %            215	, 213.5+0.2;
         %            220	, 216.9+0.2];
-        
+
         % Extended SL table to accomodate Shilshole data having sl setting 180
         %         sl_table = [180 , 180
         %             200 , 199.6+0.2;
@@ -109,7 +109,7 @@ switch(cal_mode)
         %             210	, 209.1+0.2;
         %             215	, 213.5+0.2;
         %             220	, 216.9+0.2];
-        
+
         % Source level from 2018 ATF calibration
         sl_table = [
             200 , 199.8+0.26;
@@ -117,11 +117,11 @@ switch(cal_mode)
             210	, 209.5+0.26;
             215	, 214.2+0.26;
             220	, 217.0+0.26];
-        
+
         % interpolate source level setting to get source level
         %sl = linear_interp(sl_table(:,1), sl_table(:,2), sls);
         sl = interp1(sl_table(:,1), sl_table(:,2), sls);
-        
+
         % Transmit 3-dB vertical full beamwidth (deg)
         theta_vr = 1.07;
         % Convert to radians
@@ -137,7 +137,7 @@ switch(cal_mode)
         % TVG)
         beam_nos = [1:256];
         rs = polyval(P1,beam_nos);
-        
+
         % Coefficients of polynomial fit to integrated horizontal beamwidth
         % (reverberation index = rindex)
         P2 = load(sprintf('rindex_396_poly_coeffs_%d.txt',cali_year));
@@ -146,9 +146,9 @@ switch(cal_mode)
         %   break the code by producing a double (kgb 9/27/10)
         % Delta_h = rindex
         Delta_h = polyval(P2,beam_nos);
-        
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
+
         % The basis for the multiplicative factors to be applied is
         % the sonar equation in the form
         % 20*log10(abs(data_in))=vss+sl+xmit_patt+gain-TL
@@ -157,7 +157,7 @@ switch(cal_mode)
         % loss, TL = 20*log10(range)+2*alpha*range, incorporating the growth
         % in insonified volume with range.
         % It is assumed that the TVG settings are spreading = 0, attenuation = 0.
-        
+
         % We desire a complex output signal, data_out, such that
         % vss = 20*log10(abs(data_out)).  In actuality,
         % vss = 10*log10(<abs(data_out)^2>) where we have departed from
@@ -172,33 +172,33 @@ switch(cal_mode)
         % beam number as nbeams x nbeams diagonal matrices,
         % where
         [nsamp,nbeams] = size(data_in);
-        
+
         % Define
         rsinv = 1./rs;
         Delta_hinv = 1./sqrt(Delta_h);
         xmitinv = 10.^(-xmit_patt/20);
-        
+
         % The following diagonal matrix, postmultiplying the matrix data_in,
         % makes all corrections that depend on beam number
         Beam_corr(1,:) = (rsinv.*Delta_hinv.*xmitinv);
-        
+
         % Transmission loss depends on range
         tl = 20*log10(range) + 2*alpha*range;
-        
+
         % The following diagonal matrix, premultiplying the matrix data_in,
         % makes the tl corrections that depends on sample number (range)
         tl_corr(:,1) = (10.^(tl/20));
-        
+
         % The factors that don't depend upon beam
         % number are collected in
         const = 10^(-(sl+gain)/20)/sqrt(0.5*c*tau*Delta_v);
-        
+
         data_out = const*(tl_corr*Beam_corr).*data_in;
-        
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
+
     case('TS-Fan')
-        
+
         if f ~= 396000
             error('VSS calibration only available at 396 kHz');
         end
@@ -207,17 +207,17 @@ switch(cal_mode)
         % to 1 at boresight, and negative if response is less than at boresight,
         % which is the direction in which source level is measured.
         xmit = load(sprintf('TC2160_Horizontal_Beam_396kHz_%d.txt',cali_year));
-        
+
         % Source level from 2010 calibration
         % Source level table, giving source level setting and source level
         % corrected for attenuation, which is 0.2 dB at 6 m, 396 kHz
-        
+
         %sl_table = [200 , 199.6+0.2;
         %            205 , 204.5+0.2;
         %            210	, 209.1+0.2;
         %            215	, 213.5+0.2;
         %            220	, 216.9+0.2];
-        
+
         % Extended SL table to accomodate Shilshole data having sl setting 180
         %         sl_table = [180 , 180
         %             200 , 199.6+0.2;
@@ -225,7 +225,7 @@ switch(cal_mode)
         %             210	, 209.1+0.2;
         %             215	, 213.5+0.2;
         %             220	, 216.9+0.2];
-        
+
         % Source level from 2018 ATF calibration
         sl_table = [
             200 , 199.8+0.26;
@@ -233,7 +233,7 @@ switch(cal_mode)
             210	, 209.5+0.26;
             215	, 214.2+0.26;
             220	, 217.0+0.26];
-        
+
         % Coefficients of polynomial fit to receive sensitivity
         P1 = load(sprintf('rec_sens_396_poly_coeffs_%d.txt',cali_year));
         % this form of load assumes an ascii file as input and a
@@ -243,7 +243,7 @@ switch(cal_mode)
         % TVG)
         beam_nos = [1:256];
         rs = polyval(P1,beam_nos);
-        
+
         % Change ram angles to angles appropriate to beam patterns
         ram_angles = xmit(:,1);
         na = find(ram_angles > 180);
@@ -253,23 +253,23 @@ switch(cal_mode)
         %        ram_angles(na) = ram_angles(na) - 360;
         %    end
         %end
-        
+
         theta_deg = -ram_angles;
         theta = pi/180*theta_deg;
-        
+
         % Interpolate beam pattern
         %xmit_patt = linear_interp(theta,xmit(:,2),theta_bfm);
         xmit_patt = interp1(theta,xmit(:,2),theta_bfm);
-        
+
         % interpolate source level setting to get source level
         %sl = linear_interp(sl_table(:,1), sl_table(:,2), sls);
         sl = interp1(sl_table(:,1), sl_table(:,2), sls);
-        
+
         % No corrections are made for directivity other than the
         % horizontal transmit pattern
-        
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
+
         % The basis for the multiplicative factors to be applied is
         % the sonar equation in the form
         % 20*log10(envelope in machine units) =
@@ -277,7 +277,7 @@ switch(cal_mode)
         % where ts is the target strength and TL is the transmission
         % loss, TL = 40*log10(range)+2*alpha*range.
         % It is assumed that the TVG settings are spreading = 0, attenuation = 0.
-        
+
         % We desire a complex output signal, data_out, such that
         % ts = 20*log10(abs(data_out)).  Taking antilogs
         % the desired scaling is
@@ -289,30 +289,30 @@ switch(cal_mode)
         % beam number as nbeams x nbeams diagonal matrices,
         % where
         [nsamp,nbeams] = size(data_in);
-        
+
         % Define
         rsinv = 1./rs;
         xmitinv = 10.^(-xmit_patt/20);
-        
+
         % The following diagonal matrix, postmultiplying the matrix data_in,
         % makes all corrections that depend on beam number
         Beam_corr(1,:) = (rsinv.*xmitinv);
-        
+
         % Transmission loss depends on range
         tl = 40*log10(range) + 2*alpha*range;
         % The following diagonal matrix, premultiplying the matrix data_in,
         % makes the tl corrections that depends on sample number (range)
         tl_corr(:,1) = (10.^(tl/20));
-        
+
         % The factor that doesn't depend upon beam number or range is
         const = 10^(-(sl+gain)/20);
         data_out = const*(tl_corr*Beam_corr).*data_in;
-        
+
     case('TS-Wide')
         if f==396000
             % Beam patterns broad-beam transmitter
-            xmit = load(sprintf('TC2162_Horizontal_Beam_400kHz_%d.txt',cali_year));
-            
+            xmit = load(find_input_file(sprintf('calibration_file_%4d/TC2162_Horizontal_Beam_400kHz_%4d.txt',cali_year,cali_year)));
+
             % Source level from 2018 ATF calibration corrected for
             % attenuation
             sl_table = [180, 186.9+0.29;
@@ -321,12 +321,12 @@ switch(cal_mode)
                 195	, 200.8+0.29;
                 200	, 204.8+0.29;
                 205	, 208.8+0.29];
-            
-            
+
+
         elseif f == 200000
             % Beam patterns broad-beam transmitter
-            xmit = load(sprintf('TC2162_Horizontal_Beam_200kHz_%d.txt',cali_year));
-            
+            xmit = load(find_input_file(sprintf('calibration_file_%4d/TC2162_Horizontal_Beam_200kHz_%4d.txt',cali_year,cali_year)));
+
             % Source level from 2010 calibration
             % Source level table, giving source level setting and source level
             % corrected for attenuation, which is 0.06 dB at 6 m, 200 kHz
@@ -336,7 +336,7 @@ switch(cal_mode)
             %                 195	, 194.7+0.06;
             %                 200	, 199.2+0.06;
             %                 205	, 203.5+0.06];
-            
+
             % Source level from 2018 ATF calibration
             sl_table = [180, 185.3+0.075;
                 185	, 190.1+0.075;
@@ -345,7 +345,7 @@ switch(cal_mode)
                 200	, 203.8+0.075;
                 205	, 207.7+0.075];
             % Coefficients of polynomial fit to receive sensitivity
-            P1 = load(sprintf('rec_sens_200_poly_coeffs_%d.txt',cali_year));
+            P1 = load(find_input_file(sprintf('calibration_file_%4d/rec_sens_200_poly_coeffs_%4d.txt',cali_year,cali_year)));
             % this form of load assumes an ascii file as input and a
             %   double as output; changing to a mat-file will
             %   break the code by producing a double (kgb 9/27/10)
@@ -356,7 +356,7 @@ switch(cal_mode)
         else
             error('TS calibraton only available at 200 and 396 kHz');
         end
-        
+
         % Change ram angles to angles appropriate to beam patterns
         ram_angles = xmit(:,1);
         na = find(ram_angles > 180);
@@ -366,23 +366,23 @@ switch(cal_mode)
         %        ram_angles(na) = ram_angles(na) - 360;
         %    end
         %end
-        
+
         theta_deg = -ram_angles;
         theta = pi/180*theta_deg;
-        
+
         % Interpolate beam pattern
         %xmit_patt = linear_interp(theta,xmit(:,2),theta_bfm);
         xmit_patt = interp1(theta,xmit(:,2),theta_bfm);
-        
+
         % interpolate source level setting to get source level
         %sl = linear_interp(sl_table(:,1), sl_table(:,2), sls);
         sl = interp1(sl_table(:,1), sl_table(:,2), sls);
-        
+
         % No corrections are made for directivity other than the
         % horizontal transmit pattern
-        
+
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        
+
         % The basis for the multiplicative factors to be applied is
         % the sonar equation in the form
         % 20*log10(envelope in machine units) =
@@ -390,7 +390,7 @@ switch(cal_mode)
         % where ts is the target strength and TL is the transmission
         % loss, TL = 40*log10(range)+2*alpha*range.
         % It is assumed that the TVG settings are spreading = 0, attenuation = 0.
-        
+
         % We desire a complex output signal, data_out, such that
         % ts = 20*log10(abs(data_out)).  Taking antilogs
         % the desired scaling is
@@ -402,28 +402,26 @@ switch(cal_mode)
         % beam number as nbeams x nbeams diagonal matrices,
         % where
         [nsamp,nbeams] = size(data_in);
-        
+
         % Define
         rsinv = 1./rs;
         xmitinv = 10.^(-xmit_patt/20);
-        
+
         % The following diagonal matrix, postmultiplying the matrix data_in,
         % makes all corrections that depend on beam number
         Beam_corr(1,:) = (rsinv.*xmitinv);
-        
+
         % Transmission loss depends on range
         tl = 40*log10(range) + 2*alpha*range;
         % The following diagonal matrix, premultiplying the matrix data_in,
         % makes the tl corrections that depends on sample number (range)
         tl_corr(:,1) = (10.^(tl/20));
-        
+
         % The factor that doesn't depend upon beam number or range is
         const = 10^(-(sl+gain)/20);
-        
+
         data_out = const*(tl_corr*Beam_corr).*data_in;
-        
-end
 
 end
 
-
+end
