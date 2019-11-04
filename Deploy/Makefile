@@ -42,21 +42,23 @@ pytest: build
 
 #== Some examples of running python scripts in the Docker image... ==
 version: build
-	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/covis_version.py
+	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/cversion.py
 
-imaging: build
+diffuse3: build
 	mkdir -p output/
 	docker run --rm \
 					-v $(shell pwd)/../TestData/:/input \
-					-v $(shell pwd)/pytest_output:/output \
- 					${IMAGE_TAG} covis_process.py
+					-v $(shell pwd)/output:/output \
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/COVIS-20191024T003346-diffuse3.tar.gz --output /output/COVIS-20191024T003346-diffuse3.mat
+
 
 ##== Tasks which run the Python library locally ==
 
 LOCAL_MATLAB_INSTALL ?= /usr/local/MATLAB/R2019b
 MATLAB_LD_LIBRARY_PATH=$(LOCAL_MATLAB_INSTALL)/runtime/glnxa64:$(LOCAL_MATLAB_INSTALL)/bin/glnxa64:$(LOCAL_MATLAB_INSTALL)/sys/os/glnxa64:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/native_threads:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/server:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64
 
-LOCAL_MATLAB_ENV = 	LD_LIBRARY_PATH=$(MATLAB_LD_LIBRARY_PATH):$(LD_LIBRARY_PATH) \
+LOCAL_MATLAB_ENV = 	\
+		LD_LIBRARY_PATH=$(MATLAB_LD_LIBRARY_PATH):$(LD_LIBRARY_PATH) \
 		PYTHONPATH=$(shell pwd)/pycovis-matlab:$(shell pwd)/pycovis-postprocess
 
 local_pytest:
@@ -65,8 +67,8 @@ local_pytest:
 local_version:
 		${LOCAL_MATLAB_ENV} python3 covis_version.py
 
-local_test_process:
-		${LOCAL_MATLAB_ENV} python3 covis_process.py /input/COVIS-20191024T003346-diffuse3.tar.gz
+local_diffuse3:
+		${LOCAL_MATLAB_ENV} python3 covis_process.py ../TestData/COVIS-20191024T003346-diffuse3.tar.gz --output /output/COVIS-20191024T003346-diffuse3.mat
 
 
 
