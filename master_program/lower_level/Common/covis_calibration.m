@@ -73,7 +73,7 @@ switch(cal_mode)
         % to 1 at boresight, and negative if response is less than at boresight,
         % which is the direction in which source level is measured.
 
-        xmit = load(sprintf('TC2160_Horizontal_Beam_396kHz_%d.txt',cali_year));
+        xmit = load(find_input_file(sprintf('calibration_file_%4d/TC2160_Horizontal_Beam_396kHz_%d.txt',cali_year,cali_year)));
 
         % Change ram angles to angles appropriate to beam patterns
         ram_angles = xmit(:,1);
@@ -129,7 +129,7 @@ switch(cal_mode)
         % Convert to integrated beamwidth (rad) using Gaussian approximation
         Delta_v = 0.5*sqrt(pi/log(2))*theta_vr;
         % Coefficients of polynomial fit to receiver sensitivity
-        P1 = load(sprintf('rec_sens_396_poly_coeffs_%d.txt',cali_year));
+        P1 = load(find_input_file(sprintf('calibration_file_%4d/rec_sens_396_poly_coeffs_%d.txt',cali_year,cali_year)));
         % this form of load assumes an ascii file as input and a
         %   double as output; changing to a mat-file will
         %   break the code by producing a double (kgb 9/27/10)
@@ -140,7 +140,7 @@ switch(cal_mode)
 
         % Coefficients of polynomial fit to integrated horizontal beamwidth
         % (reverberation index = rindex)
-        P2 = load(sprintf('rindex_396_poly_coeffs_%d.txt',cali_year));
+        P2 = load(find_input_file(sprintf('calibration_file_%4d/rindex_396_poly_coeffs_%d.txt',cali_year,cali_year)));
         % this form of load assumes an ascii file as input and a
         %   double as output; changing to a mat-file will
         %   break the code by producing a double (kgb 9/27/10)
@@ -206,7 +206,7 @@ switch(cal_mode)
         % units are dB normalized
         % to 1 at boresight, and negative if response is less than at boresight,
         % which is the direction in which source level is measured.
-        xmit = load(sprintf('TC2160_Horizontal_Beam_396kHz_%d.txt',cali_year));
+        xmit = load(find_input_file(sprintf('calibration_file_%4d/TC2160_Horizontal_Beam_396kHz_%d.txt',cali_year,cali_year)));
 
         % Source level from 2010 calibration
         % Source level table, giving source level setting and source level
@@ -235,7 +235,7 @@ switch(cal_mode)
             220	, 217.0+0.26];
 
         % Coefficients of polynomial fit to receive sensitivity
-        P1 = load(sprintf('rec_sens_396_poly_coeffs_%d.txt',cali_year));
+        P1 = load(find_input_file(sprintf('calibration_file_%4d/rec_sens_396_poly_coeffs_%d.txt',cali_year,cali_year)));
         % this form of load assumes an ascii file as input and a
         %   double as output; changing to a mat-file will
         %   break the code by producing a double (kgb 9/27/10)
