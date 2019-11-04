@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 #
-# I'm sure this is suuuper non-Pythoni
+# I'm sure this is suuuper non-Pythonic
+#
+# Takes a list of Matlab files on the command line.  Returns the same list
+# with files from the substitute_functions/ directory substituted
 #
 import glob
 import argparse
@@ -24,7 +27,7 @@ def substitute(orig,subst_dict):
     bn = os.path.basename(orig)
 
     if bn in subst_dict:
-        return "" #subst_dict[bn]
+        return subst_dict[bn]
     else:
         return orig
 

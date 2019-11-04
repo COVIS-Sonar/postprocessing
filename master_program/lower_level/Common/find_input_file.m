@@ -4,5 +4,21 @@ function [fullpath] = find_input_file( filename )
 % in this package's source tree.
 %
 
-[folder, name, ext] = fileparts(mfilename('fullpath'));
-fullpath = fullfile(folder,'..','..','Inputs',filename);
+if isdeployed
+
+  %
+  % Path to Inputs files in the packaged Docker image
+  %
+
+  fullpath = fullfile('/root','pycovis-matlab','Inputs',filename);
+
+else
+
+  %
+  % Path to Inputs relative to this file
+  %
+
+  [folder, name, ext] = fileparts(mfilename('fullpath'));
+  fullpath = fullfile(folder,'..','..','Inputs',filename);
+
+end

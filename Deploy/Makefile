@@ -20,12 +20,13 @@ help:
 	@echo "make local_test_process"
 
 
+PP_CODE = $(shell find pycovis-postprocess -name "*.py" )
 
 #== Tasks related to building and testing Docker scripts ==
-docker:  #pycovis-matlab/setup.py pycovis-postprocess/pycovis/postprocess/*.py
+docker:  ${PP_CODE}
 	docker build --tag ${IMAGE_TAG} .
 
-force_docker: #pycovis-matlab/setup.py
+force_docker: ${PP_CODE}
 	docker build --tag ${IMAGE_TAG} --no-cache .
 
 push: build
@@ -84,10 +85,8 @@ GITREV=${shell git rev-parse HEAD }
 GITTAG=${shell git describe --tags }
 
 
-COVIS_FUNCS = $(shell find ${COVIS_REPO}/master_program/ -name *.m) \
+COVIS_CODE = $(shell find ${COVIS_REPO}/master_program/ -name *.m) \
 					 	 $(shell find ${COVIS_REPO}/master_program/ThirdParty/ -name *.m)
-
-COVIS_CODE = $(shell ./substitute_from.py ${COVIS_FUNCS} )
 
 
 tmp/static_git_info.m:
