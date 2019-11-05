@@ -37,7 +37,8 @@ switch swp_type
         disp(['now processing imaging file: ',swp_name])
         try
             covis = covis_imaging_sweep(raw_path,swp_name,0,fig);
-        catch
+        catch ME
+            warning(['Exception: ', ME.message, ' at ', ME.stack(1).file, ' line ', int2str(ME.stack(1).line) ])
             disp(['Bad sweep:',swp_name])
             try
                 rmdir(fullfile(raw_path,swp_name),'s');

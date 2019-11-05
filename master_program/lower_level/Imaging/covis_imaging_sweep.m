@@ -4,7 +4,7 @@
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
 
-%function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
+function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 % Input:
 % swp_path: raw data directory
 % swp_name: name of raw data sweep
@@ -16,10 +16,10 @@
 % and metadata
 
 % Example
- swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Imaging\2019';
- swp_name = 'COVIS-20190822T040001-imaging1';
- json_file = 0;
- fig = 1;
+% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Imaging\2019';
+% swp_name = 'COVIS-20190822T040001-imaging1';
+% json_file = 0;
+% fig = 1;
 
 
 %% Initialization
@@ -320,7 +320,7 @@ for nb = 1:nbursts
         fprintf('no valid pings at pitch %f\n',burst(nb).pitch);
         continue
     end
-    
+
     burst_count = burst_count+1;
     if burst_count == 1
         xv_out = nan(size(bf_sig,1),size(bf_sig,2),nbursts);
@@ -332,7 +332,7 @@ for nb = 1:nbursts
         Id_filt_out = nan(size(xv_out));
         Kp_out = nan(size(xv_out));
     end
-    
+
     % calculate SI
     Kp = nanmean(abs(bf_sig_out).^2,3)./nanmean(abs(bf_sig_out),3).^2-1;
 
