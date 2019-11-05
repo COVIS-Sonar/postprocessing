@@ -16,6 +16,8 @@ Alternatively, once the `pycovis-matlab` library has been built, it can be execu
 
 All tasks are scripted in the `Makefile`.   Run `make help` to get a list of all commands.
 
+`matlab` contains _additional_ Matlab code which is added to the `master_program` library before compilation.
+
 ## Python modules and directories
 
 `pycovis-matlab` is the Matlab compiler-generated helper code.
