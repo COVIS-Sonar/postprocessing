@@ -44,12 +44,21 @@ pytest: build
 version: build
 	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/cversion.py
 
+TEST_DOCKER_MOUNTS = -v $(shell pwd)/../TestData/:/input \
+											-v $(shell pwd)/output:/output \
+
+pp_all: diffuse3 imaging1
+
 diffuse3: build
 	mkdir -p output/
-	docker run --rm \
-					-v $(shell pwd)/../TestData/:/input \
-					-v $(shell pwd)/output:/output \
+	docker run --rm ${TEST_DOCKER_MOUNTS} \
  					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/COVIS-20191024T003346-diffuse3.tar.gz --output /output/COVIS-20191024T003346-diffuse3.mat
+
+imaging1: build
+	mkdir -p output/
+	docker run --rm ${TEST_DOCKER_MOUNTS} \
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/COVIS-20191024T000002-imaging1.tar.gz --output /output/COVIS-20191024T000002-imaging1.mat
+
 
 
 ##== Tasks which run the Python library locally ==
@@ -89,7 +98,7 @@ GITTAG=${shell git describe --tags }
 
 COVIS_CODE = $(shell find ${COVIS_REPO}/master_program/ -name *.m) \
 					 	 $(shell find ${COVIS_REPO}/master_program/ThirdParty/ -name *.m) \
-						 $(shell find matlab/ -name *.m) 
+						 $(shell find matlab/ -name *.m)
 
 
 tmp/static_git_info.m:
