@@ -1,7 +1,9 @@
 help:
 	@echo "make download 			Downloads all of the COVIS test data.  Requires wget"
 
-TEST_FILES = COVIS-20191024T003346-diffuse3.tar.gz
+TEST_FILES = COVIS-20191024T003346-diffuse3.tar.gz \
+							COVIS-20191024T000002-imaging1.tar.gz
+
 
 download: $(TEST_FILES)
 
