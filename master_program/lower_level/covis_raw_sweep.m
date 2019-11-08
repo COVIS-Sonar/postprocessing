@@ -26,6 +26,8 @@ if strcmp(ext,'.gz')
 elseif strcmp(ext,'.7z')
     filename = fullfile(raw_path,raw_name);
     [~,~] = system(['"C:\Program Files\7-Zip\7z.exe" -y x ' '"' filename '"' ' -o' '"' raw_path '"']);
+elseif isfolder( fullfile(raw_path,raw_name) )
+    % No action, should just work
 else
     error('unrecognized data format')
 end
