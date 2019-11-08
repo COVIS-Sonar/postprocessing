@@ -1,3 +1,6 @@
-covis-test-data/
-test_data_old/
+output/
+test-docker-compose/
+matlab/
+Makefile
+README.md
 .git/

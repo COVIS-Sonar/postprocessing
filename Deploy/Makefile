@@ -13,6 +13,10 @@ help:
 	@echo "make test            Run pytest in the docker image"
 	@echo "make version         Demo which runs scripts/version.py in the Docker image"
 	@echo
+	@echo "make diffuse3.tar.gz_from_local"
+	@echo "make diffuse3.7z_from_local"
+	@echo "make diffuse3.tar.gz_from_s3"
+	@echo "make diffuse3.7z_from_s3"
 	@echo "== Python tasks run locally (requires Matlab or Matlab runtime) =="
 	@echo
 	@echo "make local_pytest"
@@ -44,27 +48,41 @@ pytest: build
 version: build
 	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/cversion.py
 
-TEST_DOCKER_MOUNTS = -v $(shell pwd)/../TestData/:/input \
+TEST_DOCKER_MOUNTS = -v $(shell pwd)/../testdata/:/input \
 											-v $(shell pwd)/output:/output \
 
-pp_all: diffuse3 imaging1
+diffuse3_local: diffuse3.tar.gz_from_local diffuse3.7z_from_local
+diffuse3_s3:    diffuse3.tar.gz_from_s3    diffuse3.7z_from_s3
 
-diffuse3: build
+diffuse3.tar.gz_from_local: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.tar.gz --output /output/COVIS-20191024T003346-diffuse3.mat
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.tar.gz --output /output/
 
-diffuse3_s3: build
+diffuse3.7z_from_local: build
 	mkdir -p output/
-	docker run --rm  \
-					--network test-docker-compose_covistest \
-					-e INPUT_S3_HOST=covis_input:9000 \
-					-e INPUT_S3_ACCESS_KEY=covistestdata \
-					-e INPUT_S3_SECRET_KEY=covistestdata \
-					-e OUTPUT_S3_HOST=covis_output:9000 \
-					-e OUTPUT_S3_ACCESS_KEY=covistestdata \
-					-e OUTPUT_S3_SECRET_KEY=covistestdata \
+	docker run --rm ${TEST_DOCKER_MOUNTS} \
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.7z --output /output/
+
+
+DOCKER_S3_ENV = \
+		--network test-docker-compose_covistest \
+		-e INPUT_S3_HOST=covis_input:9000 \
+		-e INPUT_S3_ACCESS_KEY=covistestdata \
+		-e INPUT_S3_SECRET_KEY=covistestdata \
+		-e OUTPUT_S3_HOST=covis_output:9000 \
+		-e OUTPUT_S3_ACCESS_KEY=covistestdata \
+		-e OUTPUT_S3_SECRET_KEY=covistestdata \
+
+diffuse3.tar.gz_from_s3: build
+	mkdir -p output/
+	docker run --rm  ${DOCKER_S3_ENV} \
  					${IMAGE_TAG} pycovis-postprocess/scripts/process.py s3://testdata/2019/10/24/COVIS-20191024T003346-diffuse3.tar.gz --output s3://outdata/2019/10/24/COVIS-20191024T003346-diffuse3/
+
+diffuse3.7z_from_s3: build
+	mkdir -p output/
+	docker run --rm  ${DOCKER_S3_ENV} \
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py s3://testdata/2019/10/24/COVIS-20191024T003346-diffuse3.7z --output s3://outdata/2019/10/24/COVIS-20191024T003346-diffuse3/
 
 
 imaging1: build

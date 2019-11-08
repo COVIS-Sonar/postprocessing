@@ -9,6 +9,6 @@ function [output] = process( inputFile, outputFile )
 [filepath,name,ext] = fileparts( inputFile );
 
 covis = covis_raw_sweep(filepath,strcat(name,ext),0)
-save(outputFile, 'covis')
+save( outputFile, 'covis')
 
 output = {}

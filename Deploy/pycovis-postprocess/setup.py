@@ -28,7 +28,7 @@ setup(name='pycovis-postprocess',
       license='MIT',
       python_requires='>=3',
       packages=['pycovis.postprocess'],
-      install_requires=["minio", "python-decouple"]
+      install_requires=["minio", "python-decouple","pyunpack", "patool"]
       # install_requires=['requests','pillow'],
       # setup_requires=['pytest-runner'],
       # tests_require=['pytest', 'numpy', 'pillow']

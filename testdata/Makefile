@@ -13,9 +13,14 @@ download: $(TEST_FILES)
 	mkdir -p $(dir $@)
 	cd $(dir $@) && wget https://covis-raw.s3.wasabisys.com/$@
 
+## Since the 7z files aren't available on the public internet,
+## make them locally instead.
+## Computationally expensive
 %.7z: %.tar.gz
 	mkdir -p $(dir $@)
-	tar xz $^ -O | 7z a -si $@
+	$(eval TMP := $(shell mktemp -d))
+	cd $(TMP) && tar xzvf $(abspath $^) | xargs 7z a $(abspath $@)
+	rm -rf $(TMP)
 
 
 .phony:  help download

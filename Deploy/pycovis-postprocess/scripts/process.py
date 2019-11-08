@@ -6,6 +6,8 @@ import argparse
 import re
 import sys
 
+import os
+
 from urllib.parse import urlparse
 import tempfile
 
@@ -13,12 +15,21 @@ from minio import Minio
 from minio.error import ResponseError
 
 from decouple import config
+from pyunpack import Archive
+
+
+##
+##
+
 
 
 parser = argparse.ArgumentParser(description='Process one COVIS file.')
 parser.add_argument('inputFile', help='COVIS file to parse')
 parser.add_argument("--output",  help="Directory for output",
-                        dest="outputDir", default="")
+                        dest="outputDir", default="/output")
+
+parser.add_argument("--auto-output-path", action='store_true',
+                    help="Automatically add the YYYY/MM/DD/ path to the output")
 
 parser.add_argument('--input-s3-host', default=config('INPUT_S3_HOST', default=""),
                     dest="inputS3Host",
@@ -40,7 +51,6 @@ parser.add_argument('--output-s3-secret-key', default=config('OUTPUT_S3_SECRET_K
                     dest="outputS3SecretKey",
                     help='Secret key for output S3 server (if s3:// URL is provided for outputFile)')
 
-
 args = parser.parse_args()
 
 
@@ -48,11 +58,11 @@ args = parser.parse_args()
 input = urlparse( args.inputFile )
 output = urlparse( args.outputDir )
 
+outputMinioClient = None
+
 ## Validate the output first, rather than catch it at the end
 if output.scheme == '':
-    outputPath = args.outputDir
-    if not outputPath.exists():
-        sys.exit("Specified output path %s does not exist" % outputPath)
+    workingOutputPath = Path(args.outputDir)
 elif output.scheme == 's3':
     s3host = args.outputS3Host
     if not s3host:
@@ -63,8 +73,12 @@ elif output.scheme == 's3':
                   secret_key=args.outputS3SecretKey,
                   secure=False)
 
+    workingOutputPath = Path("/output")
+
     ## ...
 
+
+tempdir = tempfile.TemporaryDirectory(prefix = 'covis')
 
 ## Now deal with the input
 ## If a local file
@@ -81,13 +95,10 @@ elif input.scheme == 's3':
 
     print("Retrieving bucket: %s, path %s from host %s" % (bucket, path, s3host))
 
-    tempdir = tempfile.TemporaryDirectory(prefix = 'covis')
-
     minioClient = Minio(s3host,
                   access_key=args.inputS3AccessKey,
                   secret_key=args.inputS3SecretKey,
                   secure=False)
-
 
     basename = Path(path).name
     inputPath = Path( tempdir.name ) / basename
@@ -96,28 +107,35 @@ elif input.scheme == 's3':
 
     minioClient.fget_object(bucket_name=bucket, object_name=path, file_path=str(inputPath) )
 
-# if args.outputMat:
-#     outputPath = Path(args.outputMat).resolve()
-# else:
-if True:
-
-    inputName = inputPath.name
-
-    # Ugly for now
-    inputName = re.sub(r'\.tar\.gz','.mat',inputName)
-    outputName = re.sub(r'\.7z','.mat',inputName)
-
-    outputPath = Path("/output") / outputName
-
 if not inputPath.exists():
     sys.exit( "Input file %s doesn't exist" % inputPath )
 
+basename = inputPath.stem
+basename = re.sub(r'\.tar','',basename)   ## Pathlib::stem only removes the .gz from .tar.gz
+
+matOutput = basename + ".mat"
+matOutputPath = workingOutputPath / matOutput
+
 print("Processing input file: %s" % inputPath )
-print("            to output: %s" % outputPath)
+print("            to output: %s" % matOutputPath )
+
+## Unpack archive in Python
+Archive(inputPath).extractall( tempdir.name )
+
+## \TODO  Need a way to find the directory name found in the archive rather
+## than this open-loop version
+unpackedInput = Path(tempdir.name) / basename
+
+## Tough to diagnose what's happening with the unpacked archive
+# for x in os.listdir( tempdir.name ):
+#     print(x)
+#
+# for x in os.listdir( unpackedInput ):
+#     print(x)
+
 
 with runtime.Runtime() as covis:
-
-    result = covis.process( str(inputPath), str(outputPath) )
+    result = covis.process( str(unpackedInput), str(matOutputPath) )
 
 ## Reuse from above
 if outputMinioClient:
@@ -128,9 +146,10 @@ if outputMinioClient:
         outputMinioClient.make_bucket(outbucket)
 
     ## \TODO  generate correct outputName
-    outpath = Path(output.path) / outputName
+    outpath = Path(output.path) / matOutput
     outpath = str(outpath).strip("/")  ## Minio client doesn't like leading slash
-    outputMinioClient.fput_object(file_path=outputPath,bucket_name=outbucket,object_name=outpath)
+
+    outputMinioClient.fput_object(file_path=matOutputPath, bucket_name=outbucket, object_name=outpath)
 
     print("Uploaded to bucket %s, path %s" % (outbucket,outpath) )
 
