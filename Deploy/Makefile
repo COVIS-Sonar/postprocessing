@@ -52,32 +52,59 @@ pp_all: diffuse3 imaging1
 diffuse3: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/COVIS-20191024T003346-diffuse3.tar.gz --output /output/COVIS-20191024T003346-diffuse3.mat
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.tar.gz --output /output/COVIS-20191024T003346-diffuse3.mat
+
+diffuse3_s3: build
+	mkdir -p output/
+	docker run --rm  \
+					--network test-docker-compose_covistest \
+					-e INPUT_S3_HOST=covis_input:9000 \
+					-e INPUT_S3_ACCESS_KEY=covistestdata \
+					-e INPUT_S3_SECRET_KEY=covistestdata \
+					-e OUTPUT_S3_HOST=covis_output:9000 \
+					-e OUTPUT_S3_ACCESS_KEY=covistestdata \
+					-e OUTPUT_S3_SECRET_KEY=covistestdata \
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py s3://testdata/2019/10/24/COVIS-20191024T003346-diffuse3.tar.gz --output s3://outdata/2019/10/24/COVIS-20191024T003346-diffuse3/
+
 
 imaging1: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/COVIS-20191024T000002-imaging1.tar.gz --output /output/COVIS-20191024T000002-imaging1.mat
-
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.tar.gz
 
 
 ##== Tasks which run the Python library locally ==
 
 LOCAL_MATLAB_INSTALL ?= /usr/local/MATLAB/R2019b
-MATLAB_LD_LIBRARY_PATH=$(LOCAL_MATLAB_INSTALL)/runtime/glnxa64:$(LOCAL_MATLAB_INSTALL)/bin/glnxa64:$(LOCAL_MATLAB_INSTALL)/sys/os/glnxa64:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/native_threads:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64/server:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/glnxa64/jre/lib/amd64
-
 LOCAL_MATLAB_ENV = 	\
-		LD_LIBRARY_PATH=$(MATLAB_LD_LIBRARY_PATH):$(LD_LIBRARY_PATH) \
 		PYTHONPATH=$(shell pwd)/pycovis-matlab:$(shell pwd)/pycovis-postprocess
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	MATLAB_ARCH = glnx64a
+
+	MATLAB_LD_LIBRARY_PATH=$(LOCAL_MATLAB_INSTALL)/runtime/$(MATLAB_ARCH):$(LOCAL_MATLAB_INSTALL)/bin/$(MATLAB_ARCH):$(LOCAL_MATLAB_INSTALL)/sys/os/$(MATLAB_ARCH):$(LOCAL_MATLAB_INSTALL)/sys/java/jre/$(MATLAB_ARCH)/jre/lib/amd64/native_threads:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/$(MATLAB_ARCH)/jre/lib/amd64/server:$(LOCAL_MATLAB_INSTALL)/sys/java/jre/$(MATLAB_ARCH)/jre/lib/amd64
+	LOCAL_MATLAB_ENV += LD_LIBRARY_PATH=$(MATLAB_LD_LIBRARY_PATH):$(LD_LIBRARY_PATH)
+else ifeq ($(UNAME_S),Darwin)
+## n.b.  Still have problems running locally on Mac ...  :-(
+	MATLAB_ARCH = maci64
+
+	MATLAB_DYLD_LIBRARY_PATH=$(LOCAL_MATLAB_INSTALL)/runtime/$(MATLAB_ARCH):$(LOCAL_MATLAB_INSTALL)/bin/$(MATLAB_ARCH):$(LOCAL_MATLAB_INSTALL)/sys/os/$(MATLAB_ARCH)
+	LOCAL_MATLAB_ENV += DYLD_LIBRARY_PATH=$(MATLAB_DYLD_LIBRARY_PATH):$(DYLD_LIBRARY_PATH)
+else
+	$(error Unable to detect OS)
+endif
+
+
 
 local_pytest:
 		${LOCAL_MATLAB_ENV} cd pycovis-postprocess && python3 -m pytest
 
 local_version:
-		${LOCAL_MATLAB_ENV} python3 covis_version.py
+		${LOCAL_MATLAB_ENV} python3 pycovis-postprocess/scripts/version.py
 
 local_diffuse3:
-		${LOCAL_MATLAB_ENV} python3 covis_process.py ../TestData/COVIS-20191024T003346-diffuse3.tar.gz --output /output/COVIS-20191024T003346-diffuse3.mat
+		${LOCAL_MATLAB_ENV} python3 pycovis-postprocess/scripts/process.py ../TestData/2019/10/04/COVIS-20191024T003346-diffuse3.tar.gz --output /output/COVIS-20191024T003346-diffuse3.mat
 
 
 
@@ -97,7 +124,6 @@ GITTAG=${shell git describe --tags }
 
 
 COVIS_CODE = $(shell find ${COVIS_REPO}/master_program/ -name *.m) \
-					 	 $(shell find ${COVIS_REPO}/master_program/ThirdParty/ -name *.m) \
 						 $(shell find matlab/ -name *.m)
 
 

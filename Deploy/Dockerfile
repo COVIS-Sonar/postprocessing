@@ -4,7 +4,8 @@ RUN apt-get update && apt-get install -y python3 python3-pip libgl1-mesa-dev lib
 
 ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libexpat.so
 
-RUN pip3 install pytest
+## Pre-stage some dependencies we know we need, so they get cached...
+RUN pip3 install pytest minio python-decouple
 
 ##
 ## Install pycovis.matlab
