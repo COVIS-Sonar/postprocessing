@@ -4,7 +4,7 @@
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
 
-function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
+%function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 % Input:
 % swp_path: raw data directory
 % swp_name: name of raw data sweep
@@ -16,10 +16,10 @@ function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 % and metadata
 
 % Example
-%  swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Imaging\2019';
-%  swp_name = 'COVIS-20190822T040001-imaging1';
-%  json_file = 0;
-%  fig = 1;
+ swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Doppler';
+ swp_name = 'COVIS-20191112T220002-doppler1';
+ json_file = 0;
+ fig = 1;
 
 
 %% Initialization
@@ -84,7 +84,7 @@ swp.name = swp_name;
 % parsing the json input file for the user supplied parameters
 if isempty(json_file) || all(json_file == 0)
     % default json input file
-    json_file = find_input_file('covis_image.json');
+    json_file = find_input_file('covis_doppler.json');
 end
 % check that json input file exists
 if ~exist(json_file,'file')
@@ -103,8 +103,10 @@ global Verbose;
 Verbose = covis.user.verbose;
 
 % define a 3D rectangular data grid
-[covis.grid] = covis_rectgrid_imaging(covis.grid);
-covis.grid.name = swp.name;
+for n=1:length(covis.grid)
+    [covis.grid{n}] = covis_rectgrid_doppler(covis.grid{n}); % corr grid
+    covis.grid{n}.name = swp.name;
+end
 grd_out = covis.grid;
 
 % set local copies of covis structs
@@ -338,11 +340,9 @@ for nb = 1:nbursts
 
     % ping average
     average = nanmean(bf_sig_out,3);
-    bf_sig_a = abs(average);
     bf_sig_d = sqrt(nanmean(abs(bf_sig_out-repmat(average,1,1,size(bf_sig_out,3))).^2,3)); % remove the average to enhance plume signals
 
     % calculate signal to noise ratio
-    snr_a = 20*log10(abs(bf_sig_a)./noise_floor);
     snr_d = 20*log10(abs(bf_sig_d)./noise_floor);
 
 
@@ -368,16 +368,17 @@ for nb = 1:nbursts
     % calibration
     try
         bf_sig_d_cal = covis_calibration(bf_sig_d, bfm, png(n), cal,T, S, pH, lat,depth);
-        bf_sig_a_cal = covis_calibration(bf_sig_a, bfm, png(n), cal,T, S, pH, lat,depth);
     catch
         fprintf('error in calibration at pitch %f\n',burst(nb).pitch);
         continue
     end
+    
+    % Compute Doppler shift using all pings within the burst
+    range = bfm.range;
+    [vr_cov,vr_vel,rc,I_av,vr_std,I_std,covar] = covis_incoher_dop_xgy(png(n).hdr, dsp, range, bf_sig_d_cal);
 
     Id = abs(bf_sig_d_cal).^2;
-    Ia = abs(bf_sig_a_cal).^2;
     Id_filt = Id;
-    Ia_filt = Ia;
 
     % mask out data with low snr
     Id_filt(snr_d<snr_thresh) = 10^-9;
