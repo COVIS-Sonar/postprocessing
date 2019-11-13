@@ -42,8 +42,6 @@
         "correlation": {
            "window_size": 0.001,
            "window_overlap": 0.5,
-           "windthresh": 1.0e-9,
-           "nlag": 4
         },
         "bounds": {
             "pitch": {
