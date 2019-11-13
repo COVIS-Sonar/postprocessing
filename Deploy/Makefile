@@ -7,8 +7,8 @@ help:
 	@echo "make matlab          Use Matlab compiler to build Python package 'pycovis-postprocess'"
 	@echo
 	@echo "== Python tasks run in the Docker image =="
-	@echo "make docker           Build the docker image"
-	@echo "make force_docker     Build the docker image with --no-cache"
+	@echo "make docker          Build the docker image"
+	@echo "make force_docker    Build the docker image with --no-cache"
 	@echo "make push            Push the docker image to DockerHub"
 	@echo "make test            Run pytest in the docker image"
 	@echo "make version         Demo which runs scripts/version.py in the Docker image"

@@ -1,6 +1,8 @@
 FROM amarburg/matlab-runtime:2019b
 
-RUN apt-get update && apt-get install -y python3 python3-pip libgl1-mesa-dev libxt-dev p7zip
+RUN apt-get update && apt-get install -y python3 python3-pip libgl1-mesa-dev \
+                              libxt-dev p7zip-full libarchive-dev  && \
+          rm -rf /var/lib/apt/lists/*
 
 ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libexpat.so
 
