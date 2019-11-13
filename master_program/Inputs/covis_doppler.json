@@ -14,11 +14,12 @@
 
     "sonar": {
         "position": {
-            "easting": 492669.0,
-            "northing": 5310678.0,
-            "depth": -2205,
+            "easting": 0,
+            "northing": 0,
+            "depth": -1500,
             "altitude": 4.2,
-            "declination": 16.0
+            "declination": 16.0,
+            "heading": 0
         }
     },
 
@@ -50,12 +51,12 @@
                 "stop": 62
             },
             "heading": {
-                "start": 235,
-                "stop": 235
+                "start": 0,
+                "stop": 0
             },
             "range": {
-                "start": 5,
-                "stop": 75
+                "start": 0,
+                "stop": 0
             }
         }
     },
@@ -70,9 +71,9 @@
         },
         "dimensions": 3,
         "bounds": {
-            "xmin": -30, "xmax": 30,
-            "ymin": -30, "ymax": 30,
-            "zmin":  4, "zmax":  15
+            "xmin": -40, "xmax": 30,
+            "ymin": -40, "ymax": 30,
+            "zmin":  0, "zmax":  20
         },
         "spacing": {
             "dx": 0.5, "dy": 0.5, "dz": 0.5
@@ -87,9 +88,9 @@
         },
         "dimensions": 3,
         "bounds": {
-            "xmin": -30, "xmax": 30,
-            "ymin": -30, "ymax": 30,
-            "zmin":  4, "zmax":  15
+            "xmin": -40, "xmax": 30,
+            "ymin": -40, "ymax": 30,
+            "zmin":  0, "zmax":  20
         },
         "spacing": {
             "dx": 0.5, "dy": 0.5, "dz": 0.5
