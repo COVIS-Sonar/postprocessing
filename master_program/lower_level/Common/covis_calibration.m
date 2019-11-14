@@ -37,7 +37,7 @@ function data_out = covis_calibration(data_in, bfm, ping, calibrate, T, S, pH, l
 % - new mechanism for selecting between 2010 and 2018 calibration files
 % based on the time of the raw data sweep
 
-global cali_year
+
 % The following inputs are part of the structure "ping":
 f = ping.hdr.xmit_freq;         % xmit freq (hz)
 tau = ping.hdr.pulse_width;     % Pulse length (sec)
@@ -60,7 +60,7 @@ alpha = franc_garr(f, T, S, pH, depth,lat)/1000; % attenuation coefficient (dB/m
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Fixed calibration parameters
-
+cali_year = 2018;
 switch(cal_mode)
     
     case('VSS')

@@ -21,16 +21,8 @@ function [covis] = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 
 %% Initialization
 
-% define cali_year for selection between 2010 and 2018 calibration files
-global cali_year;
-year = swp_name(7:10);
-if str2double(year)<2018
-    cali_year = 2010;
-else
-    cali_year = 2018;
-end
-
 % sonar's central yaw and heading
+year = swp_name(7:10);
 central_yaw = 135; % central yaw motor reading
 if strcmp(year,'2018')
     central_head = 289; % sonar's central magnetic heading measured in 2018 ( degree )

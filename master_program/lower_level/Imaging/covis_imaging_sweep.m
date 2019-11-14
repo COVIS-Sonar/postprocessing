@@ -23,16 +23,10 @@ function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 
 
 %% Initialization
-% define cali_year for selection between 2010 and 2018 calibration files
-global cali_year;
-year = swp_name(7:10);
-if str2double(year)<2018
-    cali_year = 2010;
-else
-    cali_year = 2018;
-end
+
 
 % sonar's central yaw and heading
+year = swp_name(7:10);
 central_yaw = 135; % central yaw motor reading
 if strcmp(year,'2018')
     central_head = 289; % sonar's central magnetic heading measured in 2018 ( degree )
@@ -247,8 +241,8 @@ for nb = 1:nbursts
         % define sonar orientation based on TCM readings
         pitch = (pi/180) * png(ip).sen_pitch;
         roll = (pi/180) * png(ip).sen_roll;
-        yaw = (pi/180) * png(ip).rot_yaw;
-
+        %yaw = (pi/180) * png(ip).rot_yaw;
+        yaw = (pi/180) * png(ip).sen_head;
         if(Verbose > 1)
             fprintf('Reading %s\n', fullfile(swp_dir, bin_file));
         end
@@ -392,7 +386,7 @@ for nb = 1:nbursts
     range = bfm.range;
     azim = bfm.angle;
 
-    [xv, yv, zv] = covis_coords_darrell(origin, range, azim, yaw, roll, pitch, central_head, pos.declination);
+    [xv, yv, zv] = covis_coords_darrell(origin, range, azim, yaw, roll, pitch, 0, pos.declination);
     xv_out(:,:,nb) = xv;
     yv_out(:,:,nb) = yv;
     zv_out(:,:,nb) = zv;
