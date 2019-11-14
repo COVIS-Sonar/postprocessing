@@ -32,10 +32,6 @@ COPY --chown=covis:covis pycovis-postprocess /home/covis/pycovis-postprocess
 WORKDIR /home/covis/pycovis-postprocess
 RUN pip3 install -e .
 
-## Copy in the test functions
-#COPY test                /root/test
-#COPY scripts             /root/scripts
-
 WORKDIR /home/covis
 
 RUN  ln -s pycovis-matlab/Inputs .
