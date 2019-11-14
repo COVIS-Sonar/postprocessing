@@ -358,7 +358,7 @@ for nb = 1:nbursts
     
     % mask out backscatter with low snr
     bf_sig_noise = repmat(bf_sig_noise,1,1,size(bf_sig_out,3));
-    snr = 20*log10(abs(bf_sig_out)./abs(bf_sig_noise));
+    snr = 20*log10(bf_sig_out./bf_sig_noise);
     bf_sig_out(snr<snr_thresh) = sqrt(10^-9);
    
     

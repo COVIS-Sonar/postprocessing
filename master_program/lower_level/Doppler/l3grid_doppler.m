@@ -1,8 +1,8 @@
 function grd_out = l3grid_doppler(grd_in,grd_out)
-% Grids the values in 2-D grid 'grd_in' with coordinates (x,y,z) onto a uniform 
-% 3-D grid 'grd_out' with coordinates (xg,yg,zg) using nearest-neighbor linear interpolation. 
-% Data is interpolated onto the neighboring grid cell only. 
-% The positions (x,y,z) may be non-uniform and non-monotinic data.  
+% Grids the values in grid 'grd_in' with coordinates (x,y,z) onto a uniform 
+% 3-D grid grd_out with coordinates(xg,yg,zg) using weighted nearest-neighbor 
+% linear interpolation. Data is interpolated onto the neighboring grid cell
+% only. The positions (x,y,z) may be non-uniform and non-monotinic data.  
 % Interpolation is done using a linear weighting matrix.
 % An updated weighting matrix is returned after each call, 
 % so the function can be called multiple time on the same grid, 
@@ -12,24 +12,28 @@ function grd_out = l3grid_doppler(grd_in,grd_out)
 %   n=find(wg); Ig(n)=Ig(n)./wg(n);
 %
 % ---
-% Version 1.0 - cjones@apl.washington.edu 06/2010
-% Version 1.1 - xupeng_66@hotmail.com 05/2011
-% Version 1.2 - xupeng_66@hotmail.com 06/2011 (adding a grid for the radial
-% velocity vr)
-% Version 1.3 - guangyux@uw.edu 09/2018 (changed input and output structures)
+% Version 1.0 by guangyux@uw.edu (Nov 13,2019)
+%  --based on the original code written by Chris Jones in 2010
 
 x = grd_in.x;
 y = grd_in.y;
 z = grd_in.z;
-xg = grd_out.x;
-yg = grd_out.y;
-zg = grd_out.z;
+xg1 = grd_out.x;
+yg1 = grd_out.y;
+zg1 = grd_out.z;
 
-[Ny,Nx,Nz]=size(xg);
+[Ny,Nx,Nz]=size(xg1);
 
-dy = abs(yg(2,1,1)-yg(1,1,1));
-dx = abs(xg(1,2,1)-xg(1,1,1));
-dz = abs(zg(1,1,2)-zg(1,1,1));
+
+dx = abs(xg1(1,2,1)-xg1(1,1,1));
+dy = abs(yg1(2,1,1)-yg1(1,1,1));
+dz = abs(zg1(1,1,2)-zg1(1,1,1));
+
+% The following three lines are added to ensure correct indexing in the
+% calculation of interpolation weight
+xg=squeeze(xg1(1,:,1));
+yg=squeeze(yg1(:,1,1));
+zg=squeeze(zg1(1,1,:));
 
 xg=xg(:);
 yg=yg(:);
@@ -43,10 +47,9 @@ ymax=max(yg);
 zmax=max(zg);
 
 % use only finite points within the grid
-if strcmp(grd_out.type,'doppler velocity');
+if strcmp(grd_out.type,'doppler velocity')
     vr_cov = grd_in.vr_cov;
     vr_vel = grd_in.vr_vel;
-    vz_cov = grd_in.vz_cov;
     std = grd_in.std;
     covar = grd_in.covar;
     ii=find(isfinite(vr_cov)&(x>=xmin)&(x<=xmax)&(y>=ymin)&(y<=ymax)&(z>=zmin)&(z<=zmax));
@@ -56,7 +59,6 @@ if strcmp(grd_out.type,'doppler velocity');
         z=z(ii);
         vr_cov=vr_cov(ii);
         vr_vel=vr_vel(ii);
-        vz_cov=vz_cov(ii);
         std = std(ii);
         covar = covar(ii);
         i(:,1)=floor((x(:)-xmin)/dx)+1;
@@ -75,7 +77,6 @@ if strcmp(grd_out.type,'doppler velocity');
                     p=sub2ind([Ny,Nx,Nz],j(:,m),i(:,n),k(:,l));
                     grd_out.vr_cov(p)=grd_out.vr_cov(p)+w.*vr_cov(:); % covariance-averaged line-of-sight velocity
                     grd_out.vr_vel(p)=grd_out.vr_vel(p)+w.*vr_vel(:); % velocity-averaged line-of-sight velocity 
-                    grd_out.vz_cov(p)=grd_out.vz_cov(p)+w.*vz_cov(:); % pseudo vertical velocity 
                     grd_out.std(p)=grd_out.std(p)+w.*std(:); % velocity standard deviation
                     grd_out.covar(p) = grd_out.covar(p)+w.*covar(:); % covariance function
                     grd_out.w(p)=grd_out.w(p)+w; % weight function

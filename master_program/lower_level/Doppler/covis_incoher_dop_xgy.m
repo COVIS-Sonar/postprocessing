@@ -1,4 +1,4 @@
-function [vr_cov,vr_vel,rc,I_av,vr_std,I_std,covarsum] = covis_incoher_dop_xgy(hdr, dsp, range, data_burst)
+function [vr_cov,vr_vel,rc,I_av,vr_std,I_std,covarsum] = covis_incoher_dop_xgy(hdr, dsp, range, data_burst, method)
 
 % Coherent average of all input pings in burst is
 % subtracted from all pings to reduce ground return through sidelobes.
@@ -51,17 +51,18 @@ average = mean(data_burst,3);
 
 
 % main loop
-nbins=floor(size(data_burst,1)/(window-overlap));
-covar = zeros(nbins,size(data_burst,2));
-I1 = zeros(nbins,size(data_burst,2));
-thetai = zeros(0);
+nbins=floor(size(data_burst,1)/(nwindow-noverlap));
+covar = zeros(nbins,size(data_burst,2),size(data_burst,3));
+I1 = zeros(size(covar));
+thetai = zeros(size(covar));
 for np = 1:size(data_burst,3)
     
-    if(strfind(dsp.ping_combination.mode,'diff'))
-        % Subtract average to reduce the contribution from the chimney
-        sig_ping = data_burst(:,:,np) - average;
-    else
-        sig_ping = data_burst(:,:,np);
+    switch method
+        case 'diff'
+            % Subtract average to reduce the contribution from the chimney
+            sig_ping = data_burst(:,:,np) - average;
+        case 'ave'
+            sig_ping = data_burst(:,:,np);
     end
     
     % Window in range

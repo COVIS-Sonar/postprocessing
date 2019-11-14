@@ -286,7 +286,7 @@ for nb = 1:nbursts
 
         % Apply Filter to data
         try
-            [data, filt, png(n)] = covis_filter(data, filt, png(n));
+            [data, filt, png(ip)] = covis_filter(data, filt, png(ip));
         catch
             fprintf('error in filtering ping %d at pitch %f\n',ping_num,burst(nb).pitch);
             bad_ping_count = bad_ping_count + 1;
@@ -367,8 +367,8 @@ for nb = 1:nbursts
 
     % calibration
     try
-        bf_sig_d_cal = covis_calibration(bf_sig_d, bfm, png(n), cal,T, S, pH, lat,depth);
-        bf_sig_a_cal = covis_calibration(bf_sig_a, bfm, png(n), cal,T, S, pH, lat,depth);
+        bf_sig_d_cal = covis_calibration(bf_sig_d, bfm, png(ip), cal,T, S, pH, lat,depth);
+        bf_sig_a_cal = covis_calibration(bf_sig_a, bfm, png(ip), cal,T, S, pH, lat,depth);
     catch
         fprintf('error in calibration at pitch %f\n',burst(nb).pitch);
         continue
@@ -387,8 +387,6 @@ for nb = 1:nbursts
     Ia_filt(~indexD_a) = 10^-9;
     Ia(snr_a<snr_thresh) = 10^-9;
     Kp(snr_d<snr_thresh) = 0;
-
-
 
     % transform sonar coords into world coords
     range = bfm.range;

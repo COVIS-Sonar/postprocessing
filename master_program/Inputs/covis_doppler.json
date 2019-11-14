@@ -41,7 +41,7 @@
         },
         "correlation": {
            "window_size": 0.001,
-           "window_overlap": 0.5,
+           "window_overlap": 0.5
         },
         "bounds": {
             "pitch": {

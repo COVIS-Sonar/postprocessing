@@ -46,7 +46,6 @@ end
 if strcmp(grd.type,'doppler velocity')
     grd.vr_cov = zeros(size(grd.x)); % define an empty grid for the covariance-averaged line-of-sight velocity
     grd.vr_vel=zeros(size(grd.x)); % define an empty grid for the velocity-averaged line-of-sight velocity
-    grd.vz_cov=zeros(size(grd.x)); % define an empty grid for the peseudo vertical velocity
     grd.std=zeros(size(grd.x)); % define an empty grid for line-of-sight velocity standard deviation
     grd.covar=zeros(size(grd.x)); % define an empty grid for the covariance function
     grd.w = zeros(size(grd.x)); % define an empty grid for weight function

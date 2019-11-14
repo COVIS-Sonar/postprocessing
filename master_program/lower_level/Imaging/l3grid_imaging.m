@@ -1,10 +1,10 @@
 function grd_out = l3grid_imaging(grd_in,grd_out)
 
 
-% Grids the values in 2-D grid 'grd_in' with coordinates (x,y,z) onto a uniform 
-% 3-D grid grd_out with coordinates(xg,yg,zg) using nearest-neighbor linear interpolation. 
-% Data is interpolated onto the neighboring grid cell only. 
-% The positions (x,y,z) may be non-uniform and non-monotinic data.  
+% Grids the values in grid 'grd_in' with coordinates (x,y,z) onto a uniform 
+% 3-D grid grd_out with coordinates(xg,yg,zg) using weighted nearest-neighbor 
+% linear interpolation. Data is interpolated onto the neighboring grid cell
+% only. The positions (x,y,z) may be non-uniform and non-monotinic data.  
 % Interpolation is done using a linear weighting matrix.
 % An updated weighting matrix is returned after each call, 
 % so the function can be called multiple time on the same grid, 
@@ -14,10 +14,8 @@ function grd_out = l3grid_imaging(grd_in,grd_out)
 %   n=find(wg); Ig(n)=Ig(n)./wg(n);
 %
 % ---
-% Version 1.0 - cjones@apl.washington.edu 06/2010
-% Version 1.1 - xupeng_66@hotmail.com 05/2011
-% Version 1.2 - xupeng_66@hotmail.com 05/2014 (adding one additional grid)
-% Version 1.3 - guangyux@uw.edu 09/2018 (changed input and output structures)
+% Version 1.0 by guangyux@uw.edu (Nov 13,2019)
+%  --based on the original code written by Chris Jones in 2010
 
 x = grd_in.x;
 y = grd_in.y;

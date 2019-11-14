@@ -271,7 +271,7 @@ for nb = 1:nbursts
         end
         
         % calibration
-        bf_sig_cal = covis_calibration(bf_sig, bfm, png(n), cal,T, S, pH, lat,depth);
+        bf_sig_cal = covis_calibration(bf_sig, bfm, png(ip), cal,T, S, pH, lat,depth);
         
         bf_sig_out(:,:,np) = bf_sig_cal;
     end % End of loop over pings in burst
