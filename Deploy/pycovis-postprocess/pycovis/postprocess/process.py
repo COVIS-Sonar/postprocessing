@@ -17,13 +17,18 @@ from decouple import config
 from pyunpack import Archive
 
 
+def postprocessing_metadata():
+    with runtime.Runtime() as covis:
+        return covis.postproc_metadata()
+
 def process( inputFile, outputDir ):
 
     ## Parse the input file,
     inputPath = Path( inputFile ).resolve()
     outputPath = Path( outputDir ).resolve()
 
-    tempdir = tempfile.TemporaryDirectory(prefix = 'covis')
+    tempdirObj = tempfile.TemporaryDirectory(prefix = 'covis')
+    tempdir = Path(tempdirObj.name)
 
     if not inputPath.exists():
         sys.exit( "Input file %s doesn't exist" % inputPath )
@@ -37,16 +42,24 @@ def process( inputFile, outputDir ):
     print("Processing input file: %s" % inputPath )
     print("            to output: %s" % matOutputPath )
 
-    ## Unpack archive in Python
     if inputPath.is_dir():
+        # Pass through if it is already unpacked
         unpackedInput = inputPath
     else:
         ## \TODO.  More robust checking if it's an archive
-        Archive(inputPath).extractall( tempdir.name )
+        Archive( inputPath ).extractall( tempdir )
 
-        ## \TODO  Need a way to find the directory name found in the archive rather
-        ## than this open-loop version
-        unpackedInput = Dir.glob( tempdir.name + "/*" )[0]  / basename
+        for p in Path(tempdir).rglob("*/"):
+            print(p)
+            if p.is_dir():
+                unpackedInput = p
+                break
+
+    if not unpackedInput:
+        logging.error("Could not find unpacked input")
+        return
+
+    print("Unpacked input file at: %s" % unpackedInput )
 
     ## Tough to diagnose what's happening with the unpacked archive
     # for x in os.listdir( tempdir.name ):
