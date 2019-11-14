@@ -10,7 +10,7 @@ if isdeployed
   % Path to Inputs files in the packaged Docker image
   %
 
-  fullpath = fullfile('/root','pycovis-matlab','Inputs',filename);
+  fullpath = fullfile('/home','covis','pycovis-matlab','Inputs',filename);
 
 else
 
