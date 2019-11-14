@@ -208,12 +208,13 @@ bad_ping = zeros(0);
 bad_ping_count = 0;
 nbursts = length(burst);
 burst_count = 0;
+
 for nb = 1:nbursts
     
     % check elevation
-    if((burst(nb).pitch < elev_start) || (burst(nb).pitch > elev_stop))
-        continue;
-    end
+%     if((burst(nb).pitch < elev_start) || (burst(nb).pitch > elev_stop))
+%         continue;
+%     end
     
     if(Verbose)
         fprintf('Burst %d: pitch %f\n', nb, burst(nb).pitch);
@@ -359,30 +360,37 @@ for nb = 1:nbursts
     % mask out backscatter with low snr
     bf_sig_noise = repmat(bf_sig_noise,1,1,size(bf_sig_out,3));
     snr = 20*log10(abs(bf_sig_out)./abs(bf_sig_noise));
-    bf_sig_out(snr<snr_thresh) = sqrt(10^-9);
-   
-    
-    
     
     % Compute Doppler shift using all pings within the burst
     range = bfm.range;
     [vr_cov,vr_vel,rc,I_av,vr_std,I_std,covar] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, bf_sig_out,'diff');
     
+    % calculate snr and mask out backscatter with low snr
+    [~,~,~,I_noise] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, bf_sig_noise,'ave');
+    snr = 10*log10(I_av./I_noise);
+%     I_av(snr<snr_thresh) = nan;
+%     vr_cov(snr<snr_thresh) = nan;
+%     vr_vel(snr<snr_thresh) = nan;
+%     vr_std(snr<snr_thresh) = nan;
+%     I_std(snr<snr_thresh) = nan;
+%     covar(snr<snr_thresh) = nan;
+    
+    
     % OSCFAR detection section
-    mag2 = I_av;
-    % determine the specified quantile at each range (time) step
-    clutter = prctile(mag2, clutterp, 2);
-    dBclutter = 10*log10(clutter) * ones(1,length(bfm.angle));
-    dBmag = 10*log10(mag2);
-    dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
-    indexD_d = dBSCR > scrthreshold; % detected samples
-  
-    vr_cov(~indexD_d) = nan;
-    vr_vel(~indexD_d) = nan;
-    I_av(~indexD_d) = nan;
-    vr_std(~indexD_d) = nan;
-    I_std(~indexD_d) = nan;
-    covar(~indexD_d) = nan;
+%     mag2 = I_av;
+%     % determine the specified quantile at each range (time) step
+%     clutter = prctile(mag2, clutterp, 2);
+%     dBclutter = 10*log10(clutter) * ones(1,length(bfm.angle));
+%     dBmag = 10*log10(mag2);
+%     dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
+%     indexD_d = dBSCR > scrthreshold; % detected samples
+%   
+%     vr_cov(~indexD_d) = nan;
+%     vr_vel(~indexD_d) = nan;
+%     I_av(~indexD_d) = nan;
+%     vr_std(~indexD_d) = nan;
+%     I_std(~indexD_d) = nan;
+%     covar(~indexD_d) = nan;
     
     % transform sonar coords into world coords
     azim = bfm.angle;
