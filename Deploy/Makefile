@@ -39,8 +39,9 @@ pytest: build
 	docker run --rm \
 						-v $(shell pwd)/../TestData/:/input \
 						-v $(shell pwd)/pytest_output:/output \
-						${IMAGE_TAG} --workdir pycovis-postprocess -m pytest
+						${IMAGE_TAG}  -m pytest
 
+#						--workdir $(shell pwd)/pycovis-postprocess \
 
 #== Some examples of running python scripts in the Docker image... ==
 version: build
