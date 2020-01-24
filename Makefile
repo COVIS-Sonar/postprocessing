@@ -23,8 +23,8 @@ deps: gsw
 gsw:
 	mkdir -p master_program/ThirdParty/GSW/
 	cd master_program/ThirdParty/GSW && \
-			wget http://www.teos-10.org/software/gsw_matlab_v3_06_11.zip &&
-			unzip gsw_matlab_v3_06_11.zip &&
+			wget http://www.teos-10.org/software/gsw_matlab_v3_06_11.zip && \
+			unzip gsw_matlab_v3_06_11.zip && \
 			rm gsw_matlab_v3_06_11.zip
 
 ## Rule to retrieve git test data if it doesn't exist
