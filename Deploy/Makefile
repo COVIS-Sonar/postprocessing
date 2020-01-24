@@ -47,7 +47,7 @@ pytest: build
 version: build
 	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/cversion.py
 
-TEST_DOCKER_MOUNTS = -v $(shell pwd)/../testdata/:/input \
+TEST_DOCKER_MOUNTS = -v $(shell pwd)/../TestData/:/input \
 											-v $(shell pwd)/output:/output \
 
 diffuse3_local: diffuse3.tar.gz_from_local diffuse3.7z_from_local
@@ -133,7 +133,7 @@ local_diffuse3:
 COVIS_REPO=..
 MCC=mcc
 
-matlab: pycovis-matlab/setup.py
+matlab: pycovis-matlab/setup.py ../master_program/ThirdParty/GSW/
 
 GITREV=${shell git rev-parse HEAD }
 GITTAG=${shell git describe --tags }

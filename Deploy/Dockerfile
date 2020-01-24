@@ -1,6 +1,6 @@
 FROM amarburg/matlab-runtime:2019b
 
-RUN apt-get update && apt-get install -y python3 python3-pip libgl1-mesa-dev \
+RUN apt-get update && apt-get install -y python3 python3-pip libgl1-mesa-dev patool \
                               libxt-dev p7zip-full netcat libarchive-dev  && \
           rm -rf /var/lib/apt/lists/*
 
@@ -16,7 +16,7 @@ RUN chown -R covis:covis /home/covis
 USER covis
 
 ## Pre-stage some dependencies we know we need, so they get cached...
-RUN pip3 install pytest python-decouple pyunpack patool
+RUN pip3 install pytest python-decouple pyunpack patool minio
 
 ##
 ## Install pycovis.matlab
