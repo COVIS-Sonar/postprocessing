@@ -7,20 +7,20 @@
 %  --use fixed time window to calculate averages
 %  --use fixed time lag to calculate correlation
 
-function [covis] = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
+function [covis] = covis_diffuse_sweep2(swp_path, swp_name, json_file, fig)
 % Input
 % swp_path: sweep directory
 % swp_name: sweep name
 % json_file: json file directory (if 0, use default json file)
 % fig: set fig to 1 to plot gridded data. plotting is muted otherwise.
 % output
-% Matlab structure array that contains the gridded data and metadata
+% COVIS: Matlab structure array that contains the gridded data and metadata
 
 % Example
-% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Diffuse_flow\2019';
-% swp_name = 'COVIS-20191129T003002-diffuse1';
+% swp_path = 'C:\COVIS\Axial\COVIS_data\raw\raw_data_combine\2019\08\01';
+% swp_name = 'COVIS-20190801T003002-diffuse1';
 % json_file = 0;
-% fig = 0;
+% fig = 1;
 
 %% Initialization
 
@@ -59,6 +59,7 @@ avg_win = 4;
 
 
 % bathymetry data directory
+swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
 if swp_date<=datenum(2019,7,6)
     bathy_file = sprintf('covis_bathy_2018.mat');
 elseif swp_date<=datenum(2019,11,23)
@@ -386,28 +387,19 @@ for np = 1:size(bf_sig_t,3)
     I_t2(:,:,np) = I2;
 end
 
-% average
+% calculate averages over a short window
 cor_av = abs(nansum(cov_t,3))./sqrt(nansum(E1_t,3).*nansum(E2_t,3));
 I_av1 = nanmean(I_t1,3);
 I_av2 = nanmean(I_t2,3);
+decor_I_av = (1-cor_av).*I_av2;
 X = log(I_t1./repmat(I_av1,1,1,size(I_t1,3)));
-
-win_t = ping_sec(end)-ping_sec(1);
-nwin = floor(win_t/((1-overlap)*avg_win));
-
-
-time0 = ping_sec(1);
-
-
-
-
 snr1 = 10*log10(I_av1./I_noise1);
 snr2 = 10*log10(I_av2./I_noise2);
 mask1 = nan(size(snr1));
 mask2 = nan(size(snr2));
 mask1(snr1>snr_thresh) = 1;
 mask2(snr2>snr_thresh) = 1;
-time_win1 = time0;
+time_win1 = ping_sec(1);
 time_win2 = time_win1+avg_win;
 ii_ave = find(ping_sec>=time_win1&ping_sec<=time_win2);
 nave = length(ii_ave); % number of samples used for averaging
@@ -417,11 +409,11 @@ SI = nave*nansum(Isq_t(:,:,ii_ave),3)./nansum(I_t1(:,:,ii_ave),3).^2-1;
 Kp = nanmean(abs(bf_sig_t(:,:,ii_ave)).^2,3)./nanmean(abs(bf_sig_t(:,:,ii_ave)),3).^2-1;
 sig_phi2 = log(1./J);
 sig_phi2(J==0) = nan;
-J_ave = J.*mask1;
-X_var_ave = X_var.*mask1;
-Kp_ave = Kp.*mask1;
-SI_ave = SI.*mask1;
-sig_phi2_ave = sig_phi2.*mask1;
+cor_av = cor_av.*mask2;
+X_var = X_var.*mask1;
+Kp = Kp.*mask1;
+SI = SI.*mask1;
+sig_phi2 = sig_phi2.*mask1;
 
 
 
@@ -431,23 +423,6 @@ sig_phi2_ave = sig_phi2.*mask1;
 
 
 
-COV_t = zeros(size(cov_t));
-E_t  = zeros(size(cov_t));
-cor_av_t = zeros(size(cov_t));
-count = 0;
-for k = 1:1:size(cov_t,3)
-    count = count+1;
-    COV_t(:,:,count) = abs(nanmean(cov_t(:,:,1:k),3));
-    E_t(:,:,count) = sqrt(nanmean(E1_t(:,:,1:k),3).*nanmean(E2_t(:,:,1:k),3));
-    cor_av1 = abs(nansum(cov_t(:,:,1:k),3))./sqrt(nansum(E1_t(:,:,1:k),3).*nansum(E2_t(:,:,1:k),3));
-    cor_av1(snr2<snr_thresh) = nan;
-    cor_av_t(:,:,count) = cor_av1;
-end
-cov_t = cov_t.*repmat(mask2,1,1,size(cov_t,3));
-cov_m = squeeze(nanmean(nanmean(cov_t,1),2));
-cor_av_m = squeeze(nanmean(nanmean(cor_av_t,1),2));
-E_m = squeeze(nanmean(nanmean(E_t,1),2));
-COV_m = squeeze(nanmean(nanmean(COV_t,1),2));
 
 % Find seafloor origins of acoustic backscatter
 alt = covis.sonar.position.altitude; % height of COVIS
@@ -553,10 +528,13 @@ for k = 1:length(covis.grid)
     grd.v(ii) = grd.v(ii)./grd.w(ii);
     covis.grid{k} = grd;
 end
+covis.sweep = swp;
+covis.ping = png;
+covis.sonar.position = pos;
+covis.processing.beamformer = bfm;
+covis.processing.calibrate = cal;
+covis.processing.filter = filt;
 covis.bad_ping = bad_ping;
-covis.swp_name = swp_name;
-covis.png = png;
-covis.nave = nave;
 fclose('all');
 
 %% plot results
@@ -636,7 +614,7 @@ if fig==1
     hold on;
     plot(0,0,'.m','markersize',30);
     hold off;
-    title('sp2');
+    title('Normalized Phase Variance');
 
     figure
     kp = covis.grid{7}.v;
@@ -651,6 +629,6 @@ if fig==1
     hold on;
     plot(0,0,'.m','markersize',30);
     hold off;
-    title('K_p');
+    title('Normalized Amplitude Variance');
 end
 %end
