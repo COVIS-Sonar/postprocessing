@@ -23,15 +23,15 @@ function covis_diffuse_plot(covis,ind)
 % load gridded data
 if ind==1
     grid = covis.grid{2};
-    indname = 'Decorrelation';
+    indname = 'Decorr';
     crange = [0.1 0.5];
 elseif ind==2
     grid = covis.grid{6};
-    indname = 'Normalized Phase Variance';
+    indname = 'Phase Variance';
     crange = [0.05 1];
 elseif ind==3
     grid = covis.grid{7};
-    indname = 'Normalized Amplitude Variance';
+    indname = 'Amplitude Variance';
     crange = [0.05 0.3];
 end
 xg = grid.x;
@@ -39,32 +39,33 @@ yg = grid.y;
 v = grid.v;
 
 % load bathymetry data
-swp_name = covis.sweep.name;
-swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
-if swp_date<=datenum(2019,7,6)
-    bathy_file = sprintf('covis_bathy_2018.mat');
-elseif swp_date<=datenum(2019,11,23)
-    bathy_file = sprintf('covis_bathy_2019a.mat');
-else
-    bathy_file = sprintf('covis_bathy_2019b.mat');
-end
-bathy = load(bathy_file);
-xb = bathy.covis.grid.x;
-yb = bathy.covis.grid.y;
-zb = bathy.covis.grid.v;
+% swp_name = covis.sweep.name;
+% swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
+% if swp_date<=datenum(2019,7,6)
+%     bathy_file = sprintf('covis_bathy_2018.mat');
+% elseif swp_date<=datenum(2019,11,23)
+%     bathy_file = sprintf('covis_bathy_2019a.mat');
+% else
+%     bathy_file = sprintf('covis_bathy_2019b.mat');
+% end
+% bathy = load(bathy_file);
+% xb = bathy.covis.grid.x;
+% yb = bathy.covis.grid.y;
+% zb = bathy.covis.grid.v;
 
 % create the map
 figure
 pcolorjw(xg,yg,v);
 axis image;
 hold on;
-contour(xb,yb,zb,[-2:0.5:4],'k');
+%contour(xb,yb,zb,[-2:0.5:4],'k');
 plot(0,0,'.g','markersize',15);
 hold off;
 xlabel('Easting of COVIS ( m )');
 ylabel('Northing of COVIS ( m )');
-title(indname);
-colorbar;
+%title(swp_name);
+h = colorbar;
+title(h,indname);
 ct = cbrewer('seq','Reds',9);
 colormap(ct);
 caxis(crange);
