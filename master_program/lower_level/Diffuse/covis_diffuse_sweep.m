@@ -11,7 +11,7 @@ function [covis] = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % json_file: json file directory (if 0, use default json file)
 % fig: set fig to 1 to plot gridded data. plotting is muted otherwise.
 % output
-% Matlab structure array that contains the gridded data and metadata
+% COVIS: Matlab structure array that contains the gridded data and metadata
 
 % Example
 % swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Diffuse_flow\2019';
@@ -20,15 +20,6 @@ function [covis] = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % fig = 1;
 
 %% Initialization
-
-% define cali_year for selection between 2010 and 2018 calibration files
-global cali_year;
-year = swp_name(7:10);
-if str2double(year)<2018
-    cali_year = 2010;
-else
-    cali_year = 2018;
-end
 
 % sonar's central yaw and heading
 central_yaw = 135; % central yaw motor reading
