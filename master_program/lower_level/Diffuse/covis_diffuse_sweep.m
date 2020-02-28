@@ -9,12 +9,12 @@
 
 function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % Input
-% swp_path: sweep directory
-% swp_name: sweep name
-% json_file: json file directory (if 0, use default json file)
-% fig: set fig to 1 to plot gridded data. plotting is muted otherwise.
-% output
-% covis: Matlab structure array that contains the gridded data and metadata
+%  swp_path: sweep directory
+%  swp_name: sweep name
+%  json_file: json file directory (if 0, use default json file)
+%  fig: set fig to 1 to plot gridded data. plotting is muted otherwise.
+% Output
+%  covis: Matlab structure array that contains the gridded data and metadata
 
 % Example
 % swp_path = 'C:\COVIS\Axial\COVIS_data\raw\raw_data_combine\2019\08\01';
@@ -50,7 +50,7 @@ noise_floor = 0.64; % rms noise floor (uncalibrated in machine units)
 snr_thresh = 45; % snr threshold ( dB )
 
 
-% correlation time lag
+% correlation time lag (sec)
 tlag = 2;
 
 % averaging window length (sec)
@@ -335,10 +335,26 @@ for np = 1:size(data,3)
     Isq_t(:,:,np) = Isq1;
 end
 
-% loop over pings again to form ping-ping decorrelation
+% average over the selected time window
 ping_sec = [png(1:nping).sec];
+time_win1 = ping_sec(1);
+time_win2 = time_win1+avg_win;
+ii_ave = find(ping_sec>=time_win1&ping_sec<=time_win2);
+nave = length(ii_ave); % number of samples used for averaging
+I_av1 = nanmean(I_t1(:,:,ii_ave),3);
+X = log(I_t1(:,:,ii_ave)./repmat(I_av1,1,1,length(ii_ave)));
+J = abs(nanmean(bf_sig_t(:,:,ii_ave)./abs(bf_sig_t(:,:,ii_ave)),3)).^2;
+X_var = nanvar(X(:,:,ii_ave),[],3);
+SI = nave*nansum(Isq_t(:,:,ii_ave),3)./nansum(I_t1(:,:,ii_ave),3).^2-1;
+Kp = nanmean(abs(bf_sig_t(:,:,ii_ave)).^2,3)./nanmean(abs(bf_sig_t(:,:,ii_ave)),3).^2-1;
+sig_phi2 = log(1./J);
+sig_phi2(J==0) = nan;
+
+% loop over pings again to form ping-ping decorrelation
 ping_rate = png(1).hdr.max_ping_rate;
-for np = 1:size(bf_sig_t,3)
+bf_sig_t_sub = bf_sig_t(:,:,ii_ave);
+ping_sec_sub = ping_sec(ii_ave);
+for np = 1:size(bf_sig_t_sub,3)
     
     
     % get range and azimuthal angles
@@ -347,6 +363,7 @@ for np = 1:size(bf_sig_t,3)
     
     % calculate the target strength corresponding to the noise floor
     if np==1
+        bf_sig1 = squeeze(bf_sig_t(:,:,np));
         bf_sig_noise = noise_floor*ones(size(bf_sig1));
         bf_sig_noise = covis_calibration(bf_sig_noise,bfm,png(n),cal,T,S,pH,lat,depth);
         [~, E1_noise,E2_noise, ~] = covis_covar_hamming(bf_sig_noise, bf_sig_noise, range, cwsize, cwovlap);
@@ -360,15 +377,15 @@ for np = 1:size(bf_sig_t,3)
     
     t1 = png(np).sec;
     t2 = t1+tlag;
-    if ~isempty(find(abs(ping_sec-t2)<1/ping_rate,1))
-        [~,np2] = min(abs(ping_sec-t2));
+    if ~isempty(find(abs(ping_sec_sub-t2)<1/ping_rate,1))
+        [~,np2] = min(abs(ping_sec_sub-t2));
     else
         continue
     end
     
     % pair of pings used
-    bf_sig1 = bf_sig_t(:,:,np);
-    bf_sig2 = bf_sig_t(:,:,np2);
+    bf_sig1 = bf_sig_t_sub(:,:,np);
+    bf_sig2 = bf_sig_t_sub(:,:,np2);
     
     % Correlate pings
     %  rc is the range of the center of the corr bin
@@ -387,28 +404,20 @@ for np = 1:size(bf_sig_t,3)
     I_t2(:,:,np) = I2;
 end
 
-% calculate averages over a short window
+% average oveer ping pairs
 cor_av = abs(nansum(cov_t,3))./sqrt(nansum(E1_t,3).*nansum(E2_t,3));
 I_av2 = nanmean(I_t2,3);
 decor_I_av = (1-cor_av).*I_av2;
+
+
+
+% mask out data points with low SNR
 snr1 = 10*log10(I_av1./I_noise1);
 snr2 = 10*log10(I_av2./I_noise2);
 mask1 = nan(size(snr1));
 mask2 = nan(size(snr2));
 mask1(snr1>snr_thresh) = 1;
 mask2(snr2>snr_thresh) = 1;
-time_win1 = ping_sec(1);
-time_win2 = time_win1+avg_win;
-ii_ave = find(ping_sec>=time_win1&ping_sec<=time_win2);
-nave = length(ii_ave); % number of samples used for averaging
-I_av1 = nanmean(I_t1(:,:,ii_ave),3);
-X = log(I_t1(:,:,ii_ave)./repmat(I_av1,1,1,length(ii_ave)));
-J = abs(nanmean(bf_sig_t(:,:,ii_ave)./abs(bf_sig_t(:,:,ii_ave)),3)).^2;
-X_var = nanvar(X(:,:,ii_ave),[],3);
-SI = nave*nansum(Isq_t(:,:,ii_ave),3)./nansum(I_t1(:,:,ii_ave),3).^2-1;
-Kp = nanmean(abs(bf_sig_t(:,:,ii_ave)).^2,3)./nanmean(abs(bf_sig_t(:,:,ii_ave)),3).^2-1;
-sig_phi2 = log(1./J);
-sig_phi2(J==0) = nan;
 cor_av = cor_av.*mask2;
 decor_I_av = decor_I_av.*mask2;
 X_var = X_var.*mask1;
@@ -418,14 +427,9 @@ sig_phi2 = sig_phi2.*mask1;
 
 
 
+%% Find seafloor origins of acoustic backscatter
 
-
-
-
-
-
-
-% Find seafloor origins of acoustic backscatter
+% load bathymetry data
 alt = covis.sonar.position.altitude; % height of COVIS
 covis_bathy = bathy.covis;
 x_bathy = covis_bathy.grid.x;
@@ -499,8 +503,9 @@ for j = 1:length(azim)
             y_out2(i,j) = nan;
         end
     end
-    
 end
+
+% interpolate onto a 2D grid
 for k = 1:length(covis.grid)
     grd = covis.grid{k};
     switch grd.type
@@ -529,12 +534,18 @@ for k = 1:length(covis.grid)
     grd.v(ii) = grd.v(ii)./grd.w(ii);
     covis.grid{k} = grd;
 end
+
+% save metadata into the covis structure
 covis.sweep = swp;
 covis.ping = png;
 covis.sonar.position = pos;
 covis.processing.beamformer = bfm;
 covis.processing.calibrate = cal;
 covis.processing.filter = filt;
+covis.processing.correlation.tlag = tlag;
+covis.processing.averaging.win = avg_win;
+covis.processing.mask.noise_floor = noise_floor;
+covis.processing.mask.snr = snr_thresh;
 covis.bad_ping = bad_ping;
 fclose('all');
 

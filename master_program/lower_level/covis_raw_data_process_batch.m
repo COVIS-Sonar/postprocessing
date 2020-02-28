@@ -4,9 +4,7 @@
 
 % written by guangyux@uw.edu in Oct 2019
 
-%% set up directories of functions used in the main program
-path(path,'../Imaging');
-path(path,'../Diffuse');
+
 
 %% set up raw data directories
 month = 8; % month in which the raw data was recorded
@@ -48,7 +46,7 @@ for i = 3:length(raw)
         continue;
     else
         e = e+1;
-        grid_dir_diff{e} = fullfile(grid_dir_diff1,raw(i).name,'\grid_data');
+        grid_dir_diff{e} = fullfile(grid_dir_diff1,raw(i).name,'\grid_data_new');
         if ~exist(grid_dir_diff{e},'dir')
             mkdir(grid_dir_diff{e})
         end
@@ -86,7 +84,7 @@ end
 %% Main loop
 for k = 1:length(raw_path)
     raw_path1 = raw_path{k};
-    raw_file = dir(fullfile(raw_path1,'COVIS*'));
+    raw_file = dir(fullfile(raw_path1,'*diffuse1*'));
     covis_out = cell(1,length(raw_file));
     save_flag = zeros(1,length(raw_file));
     for i = 1:length(raw_file)
@@ -189,13 +187,14 @@ for k = 1:length(raw_path)
     % save gridded data
     for e = 1:length(raw_file)
         if save_flag(e)
-            swp_name = covis_out{e}.swp_name;
+            swp_name = covis_out{e}.sweep.name;
+            swp_type = swp_name(23:25);
             covis = covis_out{e};
             grid_name = [swp_name,'.mat'];
             switch swp_type
-                case 'imaging'
+                case 'ima'
                     save(fullfile(grid_dir_imag{k},grid_name),'covis');
-                case 'diffuse'
+                case 'dif'
                     save(fullfile(grid_dir_diff{k},grid_name),'covis');
             end
         end
