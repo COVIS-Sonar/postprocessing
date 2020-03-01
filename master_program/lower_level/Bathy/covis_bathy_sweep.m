@@ -4,6 +4,10 @@
 
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
+% verison 2.0 by guangyux@uw.edu (Feb 27, 2020)
+%  --more adjustable parameters are added to the metadata in the output
+%    structure
+%  --version number of the code is added to the metadata in the output structure
 
 function covis = covis_bathy_sweep(swp_path, swp_name, json_file, fig)
 % Input:
@@ -17,22 +21,19 @@ function covis = covis_bathy_sweep(swp_path, swp_name, json_file, fig)
 % and metadata
 
 % Example:
-% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Bathy\2019';
-% swp_name = 'COVIS-20190706T043548-bathy3';
+% swp_path = 'C:\COVIS\Axial\COVIS_data\raw\Bathy\2019';
+% swp_name = 'COVIS-20191227T155911-bathy1';
 % json_file = 0;
 % fig = 1;
 
 %% Initialization
 % define cali_year for selection between 2010 and 2018 calibration files
-global cali_year;
-year = swp_name(7:10);
-if str2double(year)<2018
-    cali_year = 2010;
-else
-    cali_year = 2018;
-end
+
+% version number of the code
+version_no = '2.0';
 
 % sonar's central yaw and heading
+year = swp_name(7:10);
 central_yaw = 135; % central yaw motor reading
 if strcmp(year,'2018')
     central_head = 289; % sonar's central magnetic heading measured in 2018 ( degree )
@@ -195,7 +196,11 @@ for n=1:size(csv,1)
     png(n).sen_pitch = csv(n,7);
     png(n).rot_roll = csv(n,5)/6;
     png(n).sen_roll = csv(n,8);
-    png(n).rot_yaw = csv(n,6)-central_yaw;
+    if csv(n,6) == 0
+        png(n).rot_yaw = 0;
+    else
+        png(n).rot_yaw = csv(n,6)-central_yaw;
+    end
     png(n).sen_head = csv(n,9);
     png(n).hdr = json.hdr;
 end
@@ -323,8 +328,6 @@ for nb = 1:nbursts
     indexD = dBSCR > scrthreshold; % detected samples
     bf_sig_m(~indexD)=sqrt(min(clutter));
 
-
-
     % calibration
     try
         bf_sig_m_cal = covis_calibration(bf_sig_m, bfm, png(n), cal,T, S, pH, lat,depth);
@@ -362,6 +365,7 @@ grd_out.v(grd_out.v==0) = nan;
 
 
 % save local copies of covis structs
+covis.release = version_no;
 covis.grid = grd_out;
 covis.sweep = swp;
 covis.ping = png;
@@ -369,8 +373,13 @@ covis.sonar.position = pos;
 covis.processing.beamformer = bfm;
 covis.processing.calibrate = cal;
 covis.processing.filter = filt;
+covis.processing.mask.noise_floor = noise_floor;
+covis.processing.mask.snr = snr_thresh;
+covis.processing.oscfar.clutterp = clutterp;
+covis.processing.oscfar.scrthreshold = scrthreshold;
 covis.burst = burst;
 covis.bad_ping = bad_ping;
+
 
 %% plot bathymetry
 if fig == 1

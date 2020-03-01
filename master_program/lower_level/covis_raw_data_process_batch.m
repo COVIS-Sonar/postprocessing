@@ -46,7 +46,7 @@ for i = 3:length(raw)
         continue;
     else
         e = e+1;
-        grid_dir_diff{e} = fullfile(grid_dir_diff1,raw(i).name,'\grid_data_new');
+        grid_dir_diff{e} = fullfile(grid_dir_diff1,raw(i).name,'\grid_data');
         if ~exist(grid_dir_diff{e},'dir')
             mkdir(grid_dir_diff{e})
         end
@@ -84,7 +84,7 @@ end
 %% Main loop
 for k = 1:length(raw_path)
     raw_path1 = raw_path{k};
-    raw_file = dir(fullfile(raw_path1,'*diffuse1*'));
+    raw_file = dir(fullfile(raw_path1,'covis*'));
     covis_out = cell(1,length(raw_file));
     save_flag = zeros(1,length(raw_file));
     for i = 1:length(raw_file)
@@ -183,7 +183,6 @@ for k = 1:length(raw_path)
         end
     end
     
-    
     % save gridded data
     for e = 1:length(raw_file)
         if save_flag(e)
@@ -203,6 +202,19 @@ for k = 1:length(raw_path)
             end
         end
     end
+    
+    diff_file = dir(grid_dir_diff{k},'*.mat');
+    if isempty(diff_file)
+        rmdir(grid_dir_diff{k});
+    end
+    imag_file = dir(grid_dir_imag{k},'*.mat');
+    if isempty(imag_file)
+        rmdir(grid_dir_imag{k});
+    end
+    bath_file = dir(grid_dir_bath{k},'*.mat');
+    if isempty(bath_file)
+        rmdir(grid_dir_bath{k});
+    end  
 end
 
 

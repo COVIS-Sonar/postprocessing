@@ -10,10 +10,10 @@
 
 function covis_imaging_plot(covis)
 % Input:
-% covis: the Matlab structure that contains the gridded Imaging data and
-% metadata
+%  covis: the Matlab structure that contains the gridded Imaging data and
+%         metadata
 % Output:
-% a 3D acoustic plume image
+%  a 3D acoustic plume image
 
 
 
