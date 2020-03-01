@@ -82,9 +82,10 @@ for i = 3:length(raw)
 end
 
 %% Main loop
-for k = 2:length(raw_path)
+for k = 1
+%for k = 1:length(raw_path)
     raw_path1 = raw_path{k};
-    raw_file = dir(fullfile(raw_path1,'covis*'));
+    raw_file = dir(fullfile(raw_path1,'*imaging1*'));
     covis_out = cell(1,length(raw_file));
     save_flag = zeros(1,length(raw_file));
     for i = 1:length(raw_file)
@@ -107,7 +108,7 @@ for k = 2:length(raw_path)
             case 'ima'
                 disp(['now processing imaging file: ',swp_name])
                 try
-                    covis_out{i} = covis_imaging_sweep(raw_path1,swp_name,0);
+                    covis_out{i} = covis_imaging_sweep(raw_path1,swp_name,0,0);
                     save_flag(i)=1;
                 catch
                     disp(['Bad sweep:',swp_name])
@@ -205,15 +206,15 @@ for k = 2:length(raw_path)
     
     diff_file = dir(fullfile(grid_dir_diff{k},'*.mat'));
     if isempty(diff_file)
-        rmdir(fullfile(grid_dir_diff{k},'..'));
+        rmdir(fullfile(grid_dir_diff{k},'..'),'s');
     end
     imag_file = dir(fullfile(grid_dir_imag{k},'*.mat'));
     if isempty(imag_file)
-        rmdir(fullfile(grid_dir_imag{k},'..'));
+        rmdir(fullfile(grid_dir_imag{k},'..'),'s');
     end
     bath_file = dir(fullfile(grid_dir_bath{k},'*.mat'));
     if isempty(bath_file)
-        rmdir(fullfile(grid_dir_bath{k},'..'));
+        rmdir(fullfile(grid_dir_bath{k},'..'),'s');
     end  
 end
 

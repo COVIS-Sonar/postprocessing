@@ -450,4 +450,4 @@ covis.bad_ping = bad_ping;
 if fig == 1
     covis_imaging_plot(covis);
 end
-%end
+end
