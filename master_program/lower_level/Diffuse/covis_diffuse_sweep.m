@@ -6,6 +6,8 @@
 % version 2.0 by guangyux@uw.edu (Feb 27, 2020)
 %  --use fixed time window to calculate averages
 %  --use fixed time lag to calculate correlation
+%  --more adjustable parameters used in processing are added to the metadata in the output structure
+%  --version number of the code is added to the metadata in the output structure
 
 function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % Input
@@ -23,6 +25,9 @@ function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % fig = 1;
 
 %% Initialization
+
+% version number of the code
+version_no = '2.0';
 
 % sonar's central yaw and heading
 year = swp_name(7:10);
@@ -536,6 +541,7 @@ for k = 1:length(covis.grid)
 end
 
 % save metadata into the covis structure
+covis.release = version_no;
 covis.sweep = swp;
 covis.ping = png;
 covis.sonar.position = pos;
