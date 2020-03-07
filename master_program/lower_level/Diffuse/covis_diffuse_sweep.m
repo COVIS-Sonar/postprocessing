@@ -550,8 +550,8 @@ covis.processing.calibrate = cal;
 covis.processing.filter = filt;
 covis.processing.correlation.tlag = tlag;
 covis.processing.averaging.win = avg_win;
-covis.processing.mask.noise_floor = noise_floor;
-covis.processing.mask.snr = snr_thresh;
+covis.processing.snr.noise_floor = noise_floor;
+covis.processing.snr.threshold = snr_thresh;
 covis.bad_ping = bad_ping;
 fclose('all');
 

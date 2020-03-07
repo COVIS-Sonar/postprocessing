@@ -82,10 +82,9 @@ for i = 3:length(raw)
 end
 
 %% Main loop
-for k = 1
-%for k = 1:length(raw_path)
+for k = 1:length(raw_path)
     raw_path1 = raw_path{k};
-    raw_file = dir(fullfile(raw_path1,'*imaging1*'));
+    raw_file = dir(fullfile(raw_path1,'covis*'));
     covis_out = cell(1,length(raw_file));
     save_flag = zeros(1,length(raw_file));
     for i = 1:length(raw_file)
