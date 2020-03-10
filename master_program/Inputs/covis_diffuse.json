@@ -36,7 +36,7 @@
            "order": 4
         },
         "ping_combination": {
-           "mode": "diff"
+           "mode": "nan"
         },
         "correlation": {
            "window_size": 0.001,

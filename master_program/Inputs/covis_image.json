@@ -6,8 +6,8 @@
         "verbose": 2,
         "debug": 0,
         "view": {
-            "azimuth": 37.5,
-            "elevation": 30.0
+            "azimuth": 0.0,
+            "elevation": 0.0
         },
         "outpath": "nan"
 
@@ -39,7 +39,7 @@
            "decimation": 1
         },
         "ping_combination": {
-           "mode": "diff"
+           "mode": "nan"
         },
         "bounds": {
             "pitch": {

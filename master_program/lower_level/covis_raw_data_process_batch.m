@@ -7,7 +7,7 @@
 
 
 %% set up raw data directories
-month = 7; % month in which the raw data was recorded
+month = 8; % month in which the raw data was recorded
 raw_dir = sprintf('C:/COVIS/Axial/COVIS_data/raw/raw_data_combine/2019/%02d',month); % the directory in this line has to be changed to match the directory under which the raw data is stored
 raw = dir(fullfile(raw_dir));
 e = 0;
