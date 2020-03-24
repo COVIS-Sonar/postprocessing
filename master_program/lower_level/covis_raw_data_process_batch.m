@@ -8,7 +8,7 @@
 
 %% set up raw data directories
 month = 8; % month in which the raw data was recorded
-raw_dir = sprintf('C:/COVIS/Axial/COVIS_data/raw/raw_data_combine/2019/%02d',month); % the directory in this line has to be changed to match the directory under which the raw data is stored
+raw_dir = sprintf('C:/COVIS/Axial/COVIS_data/raw/raw_data_combine/2018/%02d',month); % the directory in this line has to be changed to match the directory under which the raw data is stored
 raw = dir(fullfile(raw_dir));
 e = 0;
 raw_path = cell(0);
@@ -23,11 +23,11 @@ end
 
 %% set up gridded data directories
 % Diffuse-flow data
-grid_dir_diff1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Diffuse_flow/2019/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
+grid_dir_diff1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Diffuse_flow/2018/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
 % Imaging data
-grid_dir_imag1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Imaging/2019/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
+grid_dir_imag1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Imaging/2018/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
 % Bathymetry data
-grid_dir_bath1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Bathy/2019/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
+grid_dir_bath1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Bathy/2018/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
 if ~exist(grid_dir_diff1,'dir')
     mkdir(grid_dir_diff1)
 end
