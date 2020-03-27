@@ -3,34 +3,34 @@
 
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
+% version 2.0 by guangyux@uw.edu (Feb 27, 2020)
+%  --use fixed time window to calculate averages
+%  --use fixed time lag to calculate correlation
+%  --more adjustable parameters used in processing are added to the metadata in the output structure
+%  --version number of the code is added to the metadata in the output structure
 
-function [covis] = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
+function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % Input
-% swp_path: sweep directory
-% swp_name: sweep name
-% json_file: json file directory (if 0, use default json file)
-% fig: set fig to 1 to plot gridded data. plotting is muted otherwise.
-% output
-% Matlab structure array that contains the gridded data and metadata
+%  swp_path: sweep directory
+%  swp_name: sweep name
+%  json_file: json file directory (if 0, use default json file)
+%  fig: set fig to 1 to plot gridded data. plotting is muted otherwise.
+% Output
+%  covis: Matlab structure array that contains the gridded data and metadata
 
 % Example
-% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Diffuse_flow\2019';
-% swp_name = 'COVIS-20190731T003500-diffuse3';
+% swp_path = 'C:\COVIS\Axial\COVIS_data\raw\raw_data_combine\2019\08\01';
+% swp_name = 'COVIS-20190801T003002-diffuse1';
 % json_file = 0;
 % fig = 1;
 
 %% Initialization
 
-% define cali_year for selection between 2010 and 2018 calibration files
-global cali_year;
-year = swp_name(7:10);
-if str2double(year)<2018
-    cali_year = 2010;
-else
-    cali_year = 2018;
-end
+% version number of the code
+version_no = '2.0';
 
 % sonar's central yaw and heading
+year = swp_name(7:10);
 central_yaw = 135; % central yaw motor reading
 if strcmp(year,'2018')
     central_head = 289; % sonar's central magnetic heading measured in 2018 ( degree )
@@ -54,17 +54,24 @@ max_bad_ping_count = 2;
 noise_floor = 0.64; % rms noise floor (uncalibrated in machine units)
 snr_thresh = 45; % snr threshold ( dB )
 
-% correlation ping lag
-nlag = 4;
+
+% correlation time lag (sec)
+tlag = 2;
 
 % averaging window length (sec)
-avg_win(1) = 3.5;
-avg_win(2) = 9.25;
-avg_win(3) = 19.25;
+avg_win = 4;
+
+
 
 % bathymetry data directory
-bathy_name = sprintf('covis_bathy_%s.mat',year);
-bathy_file = find_input_file(bathy_name);
+swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
+if swp_date<=datenum(2019,7,6)
+    bathy_file = sprintf('covis_bathy_2018.mat');
+elseif swp_date<=datenum(2019,11,23)
+    bathy_file = sprintf('covis_bathy_2019a.mat');
+else
+    bathy_file = sprintf('covis_bathy_2019b.mat');
+end
 bathy = load(bathy_file);
 
 
@@ -214,7 +221,11 @@ for n=1:size(csv,1)
     png(n).sen_pitch = csv(n,7);
     png(n).rot_roll = csv(n,5)/6;
     png(n).sen_roll = csv(n,8);
-    png(n).rot_yaw = csv(n,6)-central_yaw;
+    if csv(n,6) == 0
+        png(n).rot_yaw = 0;
+    else
+        png(n).rot_yaw = csv(n,6)-central_yaw;
+    end
     png(n).sen_head = csv(n,9);
     png(n).hdr = json.hdr;
 end
@@ -230,25 +241,26 @@ yaw = (pi/180) * png(1).rot_yaw;
 bad_ping = zeros(0);
 bad_ping_count = 0;
 count = 0;
-for np=1:size(csv,1)
+nping = size(csv,1);
+for np = 1:nping
     ping_num = png(np).num;
     bin_file = sprintf('rec_7038_%06d.bin',ping_num);
     if ~exist(fullfile(swp_dir,bin_file),'file')
         fprintf('binary file missing for ping:%d\n',ping_num)
         continue
     end
-
+    
     if (np == 1)
         if(Verbose > 1)
             png(np).hdr  % View essential parameters
         end
     end
-
+    
     if(Verbose > 1)
         fprintf('Reading %s: pitch %f, roll %f, yaw %f\n', bin_file, ...
             pitch*180/pi, roll*180/pi, yaw*180/pi);
     end
-
+    
     % read raw element quadrature data
     try
         [hdr, data1] = covis_read(fullfile(swp_dir, bin_file));
@@ -260,7 +272,7 @@ for np=1:size(csv,1)
     end
     count = count+1;
     if count == 1
-        data = nan(size(data1,1),size(data1,2),size(csv,1));
+        data = nan(size(data1,1),size(data1,2),nping);
     end
     data(:,:,np) = data1;
 end   % End loop on pings
@@ -276,8 +288,8 @@ bf_sig_t = nan(size(data));
 data0 = data(:,:,1);
 for np = 1:size(data,3)
     if all(isnan(data0(:)))
-       data0 = data(:,:,np+1);
-       continue
+        data0 = data(:,:,np+1);
+        continue
     end
     data1 = data(:,:,np);
     % Correct phase
@@ -295,7 +307,7 @@ for np = 1:size(data,3)
     bfm.last_samp = hdr.last_samp + 1;
     bfm.start_angle = -64;
     bfm.end_angle = 64;
-
+    
     % Apply Filter to data
     try
         [data1, filt, png(np)] = covis_filter(data1, filt, png(np));
@@ -303,7 +315,7 @@ for np = 1:size(data,3)
         fprintf('error in filtering ping: %d\n',png(np).num)
         continue;
     end
-
+    
     % beamform the quadrature data
     try
         [bfm, bf_sig1] = covis_beamform(bfm, data1);
@@ -318,9 +330,9 @@ for np = 1:size(data,3)
         fprintf('error in calibrating ping: %d\n',png(np).num)
         continue;
     end
-
+    
     bf_sig_t(:,:,np) = bf_sig1;
-
+    
     % calculate scintillation index and log-amplitude flluctuations
     I1 = abs(bf_sig1).^2;
     Isq1 = abs(bf_sig1).^4;
@@ -328,12 +340,27 @@ for np = 1:size(data,3)
     Isq_t(:,:,np) = Isq1;
 end
 
+% average over the selected time window
+ping_sec = [png(1:nping).sec];
+time_win1 = ping_sec(1);
+time_win2 = time_win1+avg_win;
+ii_ave = find(ping_sec>=time_win1&ping_sec<=time_win2);
+nave = length(ii_ave); % number of samples used for averaging
+I_av1 = nanmean(I_t1(:,:,ii_ave),3);
+X = log(I_t1(:,:,ii_ave)./repmat(I_av1,1,1,length(ii_ave)));
+J = abs(nanmean(bf_sig_t(:,:,ii_ave)./abs(bf_sig_t(:,:,ii_ave)),3)).^2;
+X_var = nanvar(X(:,:,ii_ave),[],3);
+SI = nave*nansum(Isq_t(:,:,ii_ave),3)./nansum(I_t1(:,:,ii_ave),3).^2-1;
+Kp = nanmean(abs(bf_sig_t(:,:,ii_ave)).^2,3)./nanmean(abs(bf_sig_t(:,:,ii_ave)),3).^2-1;
+sig_phi2 = log(1./J);
+sig_phi2(J==0) = nan;
+
 % loop over pings again to form ping-ping decorrelation
-for np = 1:size(bf_sig_t,3)-nlag
+ping_rate = png(1).hdr.max_ping_rate;
+bf_sig_t_sub = bf_sig_t(:,:,ii_ave);
+ping_sec_sub = ping_sec(ii_ave);
+for np = 1:size(bf_sig_t_sub,3)
     
-    % pair of pings used
-    bf_sig1 = bf_sig_t(:,:,np);
-    bf_sig2 = bf_sig_t(:,:,np+nlag);
     
     % get range and azimuthal angles
     range = bfm.range;
@@ -341,24 +368,36 @@ for np = 1:size(bf_sig_t,3)-nlag
     
     % calculate the target strength corresponding to the noise floor
     if np==1
+        bf_sig1 = squeeze(bf_sig_t(:,:,np));
         bf_sig_noise = noise_floor*ones(size(bf_sig1));
         bf_sig_noise = covis_calibration(bf_sig_noise,bfm,png(n),cal,T,S,pH,lat,depth);
         [~, E1_noise,E2_noise, ~] = covis_covar_hamming(bf_sig_noise, bf_sig_noise, range, cwsize, cwovlap);
         I_noise1 = abs(bf_sig_noise).^2;
         I_noise2 = sqrt(E1_noise.*E2_noise);
-        I_t2 = nan(size(I_noise2,1),size(I_noise2,2),size(data,3)-nlag);
+        I_t2 = nan(size(I_noise2,1),size(I_noise2,2),size(data,3));
         cov_t = nan(size(I_t2));
         E1_t = nan(size(I_t2));
         E2_t = nan(size(I_t2));
     end
     
-
+    t1 = png(np).sec;
+    t2 = t1+tlag;
+    if ~isempty(find(abs(ping_sec_sub-t2)<1/ping_rate,1))
+        [~,np2] = min(abs(ping_sec_sub-t2));
+    else
+        continue
+    end
+    
+    % pair of pings used
+    bf_sig1 = bf_sig_t_sub(:,:,np);
+    bf_sig2 = bf_sig_t_sub(:,:,np2);
+    
     % Correlate pings
     %  rc is the range of the center of the corr bin
     try
-    [cov,E1,E2,rc] = covis_covar_hamming(bf_sig1, bf_sig2, range, cwsize, cwovlap);
+        [cov,E1,E2,rc] = covis_covar_hamming(bf_sig1, bf_sig2, range, cwsize, cwovlap);
     catch
-        fprintf('error in calculating decorrelation between pings %d and %d\n',png(np).num,png(np+nlag).num)
+        fprintf('error in calculating decorrelation between pings %d and %d\n',png(np).num,png(np2).num)
         continue
     end
     I2 = sqrt(E1.*E2);
@@ -370,43 +409,32 @@ for np = 1:size(bf_sig_t,3)-nlag
     I_t2(:,:,np) = I2;
 end
 
-% average
+% average oveer ping pairs
 cor_av = abs(nansum(cov_t,3))./sqrt(nansum(E1_t,3).*nansum(E2_t,3));
-I_av1 = nanmean(I_t1,3);
 I_av2 = nanmean(I_t2,3);
-X = log(I_t1./repmat(I_av1,1,1,size(I_t1,3)));
-
-win_t = png(end).sec-png(1).sec;
-ii = find(avg_win<win_t);
-if ~isempty(ii)
-    avg_win1 = avg_win(ii(end));
-else
-    error('not enough pings for averaging');
-end
-
-ii_ave = find([png.sec]-png(1).sec<=avg_win1);
-nave = length(ii_ave); % number of samples used for averaging
-J = abs(nanmean(bf_sig_t(:,:,ii_ave)./abs(bf_sig_t(:,:,ii_ave)),3)).^2;
-X_var = nanvar(X(:,:,ii_ave),[],3);
-SI = nave*nansum(Isq_t(:,:,ii_ave),3)./nansum(I_t1(:,:,ii_ave),3).^2-1;
-Kp = nanmean(abs(bf_sig_t(:,:,ii_ave)).^2,3)./nanmean(abs(bf_sig_t(:,:,ii_ave)),3).^2-1;
-
-sig_phi2 = log(1./J);
-sig_phi2(J==0) = nan;
 decor_I_av = (1-cor_av).*I_av2;
 
-% mask out data points with low snr
+
+
+% mask out data points with low SNR
 snr1 = 10*log10(I_av1./I_noise1);
 snr2 = 10*log10(I_av2./I_noise2);
-I_av1(snr1<snr_thresh) = nan;
-I_av2(snr2<snr_thresh) = nan;
-X_var(snr2<snr_thresh) = nan;
-SI(snr1<snr_thresh) = nan;
-sig_phi2(snr1<snr_thresh) = nan;
-Kp(snr1<snr_thresh) = nan;
-cor_av(snr2<snr_thresh) = nan;
+mask1 = nan(size(snr1));
+mask2 = nan(size(snr2));
+mask1(snr1>snr_thresh) = 1;
+mask2(snr2>snr_thresh) = 1;
+cor_av = cor_av.*mask2;
+decor_I_av = decor_I_av.*mask2;
+X_var = X_var.*mask1;
+Kp = Kp.*mask1;
+SI = SI.*mask1;
+sig_phi2 = sig_phi2.*mask1;
 
-% Find seafloor origins of acoustic backscatter
+
+
+%% Find seafloor origins of acoustic backscatter
+
+% load bathymetry data
 alt = covis.sonar.position.altitude; % height of COVIS
 covis_bathy = bathy.covis;
 x_bathy = covis_bathy.grid.x;
@@ -435,21 +463,21 @@ x_out2 = zeros(length(rc),length(azim));
 y_out2 = zeros(length(rc),length(azim));
 
 for j = 1:length(azim)
-
+    
     % receiver coordinates of a pseudo plane perpendicular along the beam
     azim1 = azim(j);
     xr = range(:)*cos(ver_beam)*sin(azim1);
     yr = range(:)*cos(ver_beam)*cos(azim1);
     zr = range(:)*sin(ver_beam);
     rr = [xr(:)';yr(:)';zr(:)'];
-
+    
     % real-world coordinates of a pseudo plane
     rw = M*rr;
-
+    
     xw1 = reshape(rw(1,:),length(range),length(ver_beam));
     yw1 = reshape(rw(2,:),length(range),length(ver_beam));
     zw1 = reshape(rw(3,:),length(range),length(ver_beam));
-
+    
     % Find the intercept of the pseudo plane on the seafloor
     zw2 = interp2(x_bathy,y_bathy,z_bathy,xw1,yw1,'linear',nan);
     dz = abs(zw1-zw2);
@@ -480,8 +508,9 @@ for j = 1:length(azim)
             y_out2(i,j) = nan;
         end
     end
-
 end
+
+% interpolate onto a 2D grid
 for k = 1:length(covis.grid)
     grd = covis.grid{k};
     switch grd.type
@@ -490,7 +519,7 @@ for k = 1:length(covis.grid)
         case 'decorrelation'
             [grd.v, grd.w] = l2grid(x_out2, y_out2, 1-cor_av, grd.x, grd.y, grd.v, grd.w);
         case 'intensity'
-            [grd.v, grd.w] = l2grid(x_out2, y_out2, I_av2, grd.x, grd.y, grd.v, grd.w);
+            [grd.v, grd.w] = l2grid(x_out1, y_out1, I_av1, grd.x, grd.y, grd.v, grd.w);
         case 'Chi_var'
             [grd.v, grd.w] = l2grid(x_out1, y_out1, X_var, grd.x, grd.y, grd.v, grd.w);
         case 'SI'
@@ -510,10 +539,20 @@ for k = 1:length(covis.grid)
     grd.v(ii) = grd.v(ii)./grd.w(ii);
     covis.grid{k} = grd;
 end
+
+% save metadata into the covis structure
+covis.release = version_no;
+covis.sweep = swp;
+covis.ping = png;
+covis.sonar.position = pos;
+covis.processing.beamformer = bfm;
+covis.processing.calibrate = cal;
+covis.processing.filter = filt;
+covis.processing.correlation.tlag = tlag;
+covis.processing.averaging.win = avg_win;
+covis.processing.snr.noise_floor = noise_floor;
+covis.processing.snr.threshold = snr_thresh;
 covis.bad_ping = bad_ping;
-covis.swp_name = swp_name;
-covis.png = png;
-covis.nave = nave;
 fclose('all');
 
 %% plot results
@@ -533,8 +572,8 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('Decorrelation');
-
-
+    
+    
     figure
     pcolorjw(xg,yg,10*log10(covis.grid{3}.v));
     shading flat
@@ -549,7 +588,7 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('Target strength')
-
+    
     figure
     pcolorjw(xg,yg,covis.grid{4}.v);
     shading flat
@@ -563,7 +602,7 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('log-amp fluctuation')
-
+    
     figure
     si = covis.grid{5}.v;
     si(si==0) = nan;
@@ -579,7 +618,7 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('Scintillation index');
-
+    
     figure
     sp2 = covis.grid{6}.v;
     pcolorjw(xg,yg,sp2);
@@ -593,8 +632,8 @@ if fig==1
     hold on;
     plot(0,0,'.m','markersize',30);
     hold off;
-    title('sp2');
-
+    title('Normalized Phase Variance');
+    
     figure
     kp = covis.grid{7}.v;
     pcolorjw(xg,yg,kp);
@@ -608,6 +647,6 @@ if fig==1
     hold on;
     plot(0,0,'.m','markersize',30);
     hold off;
-    title('K_p');
+    title('Normalized Amplitude Variance');
 end
 end

@@ -3,36 +3,35 @@
 
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
+% verison 2.0 by guangyux@uw.edu (Feb 27, 2020)
+%  --more adjustable parameters are added to the metadata in the output
+%    structure
+%  --version number of the code is added to the metadata in the output structure
 
 function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 % Input:
-% swp_path: raw data directory
-% swp_name: name of raw data sweep
-% json_file: full path and name of the json file that includes the metadata needed for
-% processing. if 0, use the default json file.
-% fig: set fig to 1 to plot gridded data. Plotting is muted otherwise.
+%  swp_path: raw data directory
+%  swp_name: name of raw data sweep
+%  json_file: full path and name of the json file that includes the metadata needed for
+%  processing. if 0, use the default json file.
+%  fig: set fig to 1 to plot gridded data. Plotting is muted otherwise.
 % Output:
-% covis: this is the Matlab structure array that includes the gridded data
-% and metadata
+%  covis: this is the Matlab structure array that includes the gridded data
+%  and metadata
 
 % Example
-% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Imaging\2019';
-% swp_name = 'COVIS-20190822T040001-imaging1';
-% json_file = 0;
-% fig = 1;
-
+%  swp_path = 'C:\COVIS\Axial\COVIS_data\raw\raw_data_combine\2019\07\06';
+%  swp_name = 'COVIS-20190706T054420-imaging1';
+%  json_file = 0;
+%  fig = 1;
 
 %% Initialization
-% define cali_year for selection between 2010 and 2018 calibration files
-global cali_year;
-year = swp_name(7:10);
-if str2double(year)<2018
-    cali_year = 2010;
-else
-    cali_year = 2018;
-end
+
+% version number of the code
+version_no = '2.0';
 
 % sonar's central yaw and heading
+year = swp_name(7:10);
 central_yaw = 135; % central yaw motor reading
 if strcmp(year,'2018')
     central_head = 289; % sonar's central magnetic heading measured in 2018 ( degree )
@@ -193,7 +192,11 @@ for n=1:size(csv,1)
     png(n).sen_pitch = csv(n,7);
     png(n).rot_roll = csv(n,5)/6;
     png(n).sen_roll = csv(n,8);
-    png(n).rot_yaw = csv(n,6)-central_yaw;
+    if csv(n,6) == 0
+        png(n).rot_yaw = 0;
+    else
+        png(n).rot_yaw = csv(n,6)-central_yaw;
+    end
     png(n).sen_head = csv(n,9);
     png(n).hdr = json.hdr;
 end
@@ -425,6 +428,7 @@ grd_out.Id_filt(n) = grd_out.Id_filt(n)./grd_out.w(n);
 grd_out.Kp(n) = grd_out.Kp(n)./grd_out.w(n);
 
 % save local copies of covis structs
+covis.release = version_no;
 covis.sweep = swp;
 covis.grid = grd_out;
 covis.ping = png;
@@ -432,11 +436,16 @@ covis.sonar.position = pos;
 covis.processing.beamformer = bfm;
 covis.processing.calibrate = cal;
 covis.processing.filter = filt;
+covis.processing.snr.noise_floor = noise_floor;
+covis.processing.snr.threshold = snr_thresh;
+covis.processing.oscfar.clutterp = clutterp;
+covis.processing.oscfar.scrthreshold = scrthreshold;
 covis.burst = burst;
 covis.bad_ping = bad_ping;
+
 
 % plot plume image
 if fig == 1
     covis_imaging_plot(covis);
 end
-%end
+end

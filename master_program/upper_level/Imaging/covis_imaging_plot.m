@@ -1,49 +1,81 @@
-% This function reads gridded Imaging data to plot 3D plume images
+% This function is used to create 3D acoustic images of volume scattering 
+% strength (VSS) from the gridded Imaging-mode data
 
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
-
+% version 2.0 by guangyux@uw.edu (Feb 20, 2020)
+%  --new color schemes for bathymetry and VSS isosurfaces
+%  --new VSS isosurface values
+%  --new angles of viewpoint
 
 function covis_imaging_plot(covis)
 % Input:
-% covis: structure array containing the gridded Imaging data and associated
-% meta data
+%  covis: the Matlab structure that contains the gridded Imaging data and
+%         metadata
+% Output:
+%  a 3D acoustic plume image
 
+
+
+
+%% main program
 swp_name = covis.sweep.name;
-year = swp_name(7:10);
+swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
 xg = covis.grid.x;
 yg = covis.grid.y;
 zg = covis.grid.z;
 vg = covis.grid.Id_filt;
 
-bathy_name = sprintf('covis_bathy_%s.mat',year);
+
+
+% load bathymetry data
+if swp_date<=datenum(2019,7,6)
+    bathy_name = sprintf('covis_bathy_2018.mat');
+elseif swp_date<=datenum(2019,11,23)
+    bathy_name = sprintf('covis_bathy_2019a.mat');
+else
+    bathy_name = sprintf('covis_bathy_2019b.mat');
+end
 bathy_file = find_input_file(bathy_name);
-bathy = load(bathy_file);
-covis_bathy = bathy.covis;
-xb = covis_bathy.grid.x;
-yb = covis_bathy.grid.y;
-zb = covis_bathy.grid.v;
+covis_bathy = load(bathy_file);
+xb = covis_bathy.covis.grid.x;
+yb = covis_bathy.covis.grid.y;
+zb = covis_bathy.covis.grid.v;
+rb = sqrt(xb.^2+yb.^2);
+zb(rb<4) = nan;
+
+
 
 % plot 3D image
 figure
-surf(xb,yb,zb)
-shading interp
-colormap('summer');
+% add bathy
+pbathy=surf(xb,yb,zb);
 axis image;
-hold on;
-caxis([-1 3]);
+caxis([-2 4]);
 caxis('manual');
-contour3(xb,yb,zb,20,'k');
-isosurf{1}.color = [0,0,1];
-isosurf{2}.color = [0.5 0 0.5];
-isosurf{3}.color = [1,0,0];
+pbathy.FaceColor='interp';
+pbathy.EdgeColor='none';
+pbathy.DiffuseStrength=0.9;
+pbathy.BackFaceLighting='lit';
+pbathy.SpecularColorReflectance=0;
+pbathy.SpecularExponent=20;
+%pbathy.SpecularStrength=0.3;
+pbathy.SpecularStrength=0.9;
+temp=pink(16);
+mymap=flipud(temp(6:13,:));
+colormap(mymap)
+hold on
+contour3(xb,yb,zb,[-2:0.2:4],'LineColor',[0.4 0.4 0.4])   
+isosurf{1}.color = [77,153,204]/255;
+isosurf{2}.color = [128,77,128]/255;
+isosurf{3}.color = [153,5,13]/255;
 isosurf{1}.value = -60;
 isosurf{2}.value = -50;
 isosurf{3}.value = -40;
-isosurf{1}.alpha = 0.2;
-isosurf{2}.alpha = 0.4;
-isosurf{3}.alpha = 0.6;
-%for n = 3
+isosurf{1}.alpha = 0.1;
+isosurf{2}.alpha = 0.2;
+isosurf{3}.alpha = 0.3;
+
 for n=1:length(isosurf)
     v = vg;
     eps = nan;
@@ -58,13 +90,23 @@ for n=1:length(isosurf)
     set(p,'EdgeColor','none','FaceColor',surf_color,'FaceAlpha',surf_alpha);
 end
 daspect([1 1 1])
+xlim([-20 1]);
+ylim([-8 12]);
 zlim([-2 15]);
 plot3([0,0],[0,0],[0,4.2],'y','linewidth',4);
 hold off;
 az = 76.5;
 el = 26;
 view([az,el])
+camlight('headlight');
 xlabel('Easting of COVIS ( m )')
 ylabel('Northing of COVIS ( m )')
-zlabel('Height above COVIS feet ( m )')
+zlabel('Height above COVIS base ( m )')
+
+h = rotate3d;
+set(h, 'ActionPreCallback', 'set(gcf,''windowbuttonmotionfcn'',@align_axislabel)')
+set(h, 'ActionPostCallback', 'set(gcf,''windowbuttonmotionfcn'','''')')
+set(gcf, 'ResizeFcn', @align_axislabel)
+align_axislabel([], gca)
 end
+
