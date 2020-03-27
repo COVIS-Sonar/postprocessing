@@ -10,7 +10,7 @@ help:
 	@echo "make docker          Build the docker image"
 	@echo "make force_docker    Build the docker image with --no-cache"
 	@echo "make push            Push the docker image to DockerHub"
-	@echo "make test            Run pytest in the docker image"
+	@echo "make pytest          Run pytest in the docker image"
 	@echo "make version         Demo which runs scripts/version.py in the Docker image"
 	@echo
 	@echo "make diffuse3.tar.gz_from_local"
@@ -162,4 +162,4 @@ clean:
 		rm -rf pycovis-matlab/ tmp/
 
 
-.PHONY: build force_build test help matlab version imaging clean tmp/static_git_info.m
+.PHONY: build force_build pytest help matlab version imaging clean tmp/static_git_info.m
