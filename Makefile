@@ -8,14 +8,19 @@ help:
 ## By default run the shorter unit test
 test: unittest
 
-ALL_MATLAB_PATHS= ${shell find master_program -type d}
+## Well, this is unpleasant and ugly, isn't it
+ALL_MATLAB_PATHS= ${shell cd Test/Unit/ && find ../../master_program -type d}
+EMPTY :=
+SPACE := $(EMPTY) $(EMPTY)
+COMMA := ,
+
 
 unittest: covis_test_data
-	git tag -d test && git tag test
-	cd Test/Unit/ && matlab -nodisplay -nosplash -r "  addpath(${ALL_MATLAB_PATHS}); result = runtests(); disp(result); exit()"
+	git tag -f test
+	cd Test/Unit/ && matlab -nodisplay -nosplash -r "  addpath('..',${subst $(SPACE),$(COMMA),$(patsubst %,'%',$(ALL_MATLAB_PATHS))}); result = runtests(); disp(result); exit()"
 
 integrationtest: covis_test_data
-	cd Test/Integration/ && matlab -nodisplay -nosplash -r "  addpath(${ALL_MATLAB_PATHS}); result = runtests(); disp(result); exit()"
+	cd Test/Integration/ && matlab -nodisplay -nosplash -r "  addpath('..',${subst $(SPACE),$(COMMA),$(ALL_MATLAB_PATHS)}); result = runtests(); disp(result); exit()"
 
 ##
 deps: gsw
