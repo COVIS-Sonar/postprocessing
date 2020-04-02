@@ -156,7 +156,6 @@ tmp/static_git_info.m:
 
 
 pycovis-matlab/setup.py: $(COVIS_CODE) tmp/static_git_info.m
-	mkdir -p pycovis-matlab/Input
 	${MCC} -v -d pycovis-matlab/ -W python:pycovis.matlab -T link:lib $^
 	cp -r ${COVIS_REPO}/master_program/Inputs pycovis-matlab/
 
