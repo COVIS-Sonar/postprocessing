@@ -53,7 +53,7 @@ version: build
 TEST_DOCKER_MOUNTS = -v $(shell pwd)/../TestData/:/input \
 											-v $(shell pwd)/output:/output \
 
-diffuse3_local: diffuse3.tar.gz_from_local diffuse3.7z_from_local
+diffuse3: diffuse3.tar.gz_from_local diffuse3.7z_from_local
 
 diffuse3.tar.gz_from_local: build
 	mkdir -p output/
@@ -65,31 +65,18 @@ diffuse3.7z_from_local: build
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
  					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.7z --output /output/
 
+imaging1: imaging1.tar.gz_from_local imaging1.7z_from_local
 
-# DOCKER_S3_ENV = \
-# 		--network test-docker-compose_covistest \
-# 		-e INPUT_S3_HOST=covis_input:9000 \
-# 		-e INPUT_S3_ACCESS_KEY=covistestdata \
-# 		-e INPUT_S3_SECRET_KEY=covistestdata \
-# 		-e OUTPUT_S3_HOST=covis_output:9000 \
-# 		-e OUTPUT_S3_ACCESS_KEY=covistestdata \
-# 		-e OUTPUT_S3_SECRET_KEY=covistestdata \
-#
-# diffuse3.tar.gz_from_s3: build
-# 	mkdir -p output/
-# 	docker run --rm  ${DOCKER_S3_ENV} \
-#  					${IMAGE_TAG} pycovis-postprocess/scripts/process.py s3://testdata/2019/10/24/COVIS-20191024T003346-diffuse3.tar.gz --output s3://outdata/2019/10/24/COVIS-20191024T003346-diffuse3/
-#
-# diffuse3.7z_from_s3: build
-# 	mkdir -p output/
-# 	docker run --rm  ${DOCKER_S3_ENV} \
-#  					${IMAGE_TAG} pycovis-postprocess/scripts/process.py s3://testdata/2019/10/24/COVIS-20191024T003346-diffuse3.7z --output s3://outdata/2019/10/24/COVIS-20191024T003346-diffuse3/
-
-
-imaging1: build
+imaging1.tar.gz_from_local: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.tar.gz
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.tar.gz --output /output/
+
+imaging1.7z_from_local: build
+	mkdir -p output/
+	docker run --rm ${TEST_DOCKER_MOUNTS} \
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.7z --output /output/
+
 
 
 ##== Tasks which run the Python library locally ==

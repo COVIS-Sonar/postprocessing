@@ -1,3 +1,5 @@
+function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
+
 % This function process the raw data recorded in COVIS's Imaging mode to
 % generate gridded data that is saved in the 'covis' structure array
 
