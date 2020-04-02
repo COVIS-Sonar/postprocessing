@@ -72,7 +72,7 @@ elseif swp_date<=datenum(2019,11,23)
 else
     bathy_file = sprintf('covis_bathy_2019b.mat');
 end
-bathy = load(bathy_file);
+bathy = load(find_input_file(bathy_file));
 
 
 
@@ -249,18 +249,18 @@ for np = 1:nping
         fprintf('binary file missing for ping:%d\n',ping_num)
         continue
     end
-    
+
     if (np == 1)
         if(Verbose > 1)
             png(np).hdr  % View essential parameters
         end
     end
-    
+
     if(Verbose > 1)
         fprintf('Reading %s: pitch %f, roll %f, yaw %f\n', bin_file, ...
             pitch*180/pi, roll*180/pi, yaw*180/pi);
     end
-    
+
     % read raw element quadrature data
     try
         [hdr, data1] = covis_read(fullfile(swp_dir, bin_file));
@@ -307,7 +307,7 @@ for np = 1:size(data,3)
     bfm.last_samp = hdr.last_samp + 1;
     bfm.start_angle = -64;
     bfm.end_angle = 64;
-    
+
     % Apply Filter to data
     try
         [data1, filt, png(np)] = covis_filter(data1, filt, png(np));
@@ -315,7 +315,7 @@ for np = 1:size(data,3)
         fprintf('error in filtering ping: %d\n',png(np).num)
         continue;
     end
-    
+
     % beamform the quadrature data
     try
         [bfm, bf_sig1] = covis_beamform(bfm, data1);
@@ -330,9 +330,9 @@ for np = 1:size(data,3)
         fprintf('error in calibrating ping: %d\n',png(np).num)
         continue;
     end
-    
+
     bf_sig_t(:,:,np) = bf_sig1;
-    
+
     % calculate scintillation index and log-amplitude flluctuations
     I1 = abs(bf_sig1).^2;
     Isq1 = abs(bf_sig1).^4;
@@ -360,12 +360,12 @@ ping_rate = png(1).hdr.max_ping_rate;
 bf_sig_t_sub = bf_sig_t(:,:,ii_ave);
 ping_sec_sub = ping_sec(ii_ave);
 for np = 1:size(bf_sig_t_sub,3)
-    
-    
+
+
     % get range and azimuthal angles
     range = bfm.range;
     azim = bfm.angle;
-    
+
     % calculate the target strength corresponding to the noise floor
     if np==1
         bf_sig1 = squeeze(bf_sig_t(:,:,np));
@@ -379,7 +379,7 @@ for np = 1:size(bf_sig_t_sub,3)
         E1_t = nan(size(I_t2));
         E2_t = nan(size(I_t2));
     end
-    
+
     t1 = png(np).sec;
     t2 = t1+tlag;
     if ~isempty(find(abs(ping_sec_sub-t2)<1/ping_rate,1))
@@ -387,11 +387,11 @@ for np = 1:size(bf_sig_t_sub,3)
     else
         continue
     end
-    
+
     % pair of pings used
     bf_sig1 = bf_sig_t_sub(:,:,np);
     bf_sig2 = bf_sig_t_sub(:,:,np2);
-    
+
     % Correlate pings
     %  rc is the range of the center of the corr bin
     try
@@ -401,7 +401,7 @@ for np = 1:size(bf_sig_t_sub,3)
         continue
     end
     I2 = sqrt(E1.*E2);
-    
+
     % save the quanities of interest
     cov_t(:,:,np) = cov;
     E1_t(:,:,np) = E1;
@@ -463,21 +463,21 @@ x_out2 = zeros(length(rc),length(azim));
 y_out2 = zeros(length(rc),length(azim));
 
 for j = 1:length(azim)
-    
+
     % receiver coordinates of a pseudo plane perpendicular along the beam
     azim1 = azim(j);
     xr = range(:)*cos(ver_beam)*sin(azim1);
     yr = range(:)*cos(ver_beam)*cos(azim1);
     zr = range(:)*sin(ver_beam);
     rr = [xr(:)';yr(:)';zr(:)'];
-    
+
     % real-world coordinates of a pseudo plane
     rw = M*rr;
-    
+
     xw1 = reshape(rw(1,:),length(range),length(ver_beam));
     yw1 = reshape(rw(2,:),length(range),length(ver_beam));
     zw1 = reshape(rw(3,:),length(range),length(ver_beam));
-    
+
     % Find the intercept of the pseudo plane on the seafloor
     zw2 = interp2(x_bathy,y_bathy,z_bathy,xw1,yw1,'linear',nan);
     dz = abs(zw1-zw2);
@@ -572,8 +572,8 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('Decorrelation');
-    
-    
+
+
     figure
     pcolorjw(xg,yg,10*log10(covis.grid{3}.v));
     shading flat
@@ -588,7 +588,7 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('Target strength')
-    
+
     figure
     pcolorjw(xg,yg,covis.grid{4}.v);
     shading flat
@@ -602,7 +602,7 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('log-amp fluctuation')
-    
+
     figure
     si = covis.grid{5}.v;
     si(si==0) = nan;
@@ -618,7 +618,7 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('Scintillation index');
-    
+
     figure
     sp2 = covis.grid{6}.v;
     pcolorjw(xg,yg,sp2);
@@ -633,7 +633,7 @@ if fig==1
     plot(0,0,'.m','markersize',30);
     hold off;
     title('Normalized Phase Variance');
-    
+
     figure
     kp = covis.grid{7}.v;
     pcolorjw(xg,yg,kp);
