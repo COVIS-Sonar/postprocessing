@@ -2,6 +2,9 @@
 
 IMAGE_TAG = amarburg/covis-postprocess:latest
 
+ifdef http_proxy
+	HTTP_PROXY_ARG := --build-arg http_proxy=$(http_proxy)
+endif
 
 help:
 	@echo "make matlab          Use Matlab compiler to build Python package 'pycovis-postprocess'"
@@ -26,10 +29,10 @@ PP_CODE = $(shell find pycovis-postprocess -name "*.py" )
 
 #== Tasks related to building and testing Docker scripts ==
 docker:  ${PP_CODE}
-	docker build --tag ${IMAGE_TAG} .
+	docker build ${HTTP_PROXY_ARG} --tag ${IMAGE_TAG} .
 
 force_docker: ${PP_CODE}
-	docker build --tag ${IMAGE_TAG} --no-cache .
+	docker build ${HTTP_PROXY_ARG} --tag ${IMAGE_TAG} --no-cache .
 
 push: build
 	docker push ${IMAGE_TAG}
@@ -45,7 +48,7 @@ pytest: build
 
 #== Some examples of running python scripts in the Docker image... ==
 version: build
-	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/cversion.py
+	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/version.py
 
 TEST_DOCKER_MOUNTS = -v $(shell pwd)/../TestData/:/input \
 											-v $(shell pwd)/output:/output \
@@ -91,7 +94,7 @@ imaging1: build
 
 ##== Tasks which run the Python library locally ==
 
-LOCAL_MATLAB_INSTALL ?= /usr/local/MATLAB/R2019b
+LOCAL_MATLAB_INSTALL ?= /usr/local/MATLAB/R2020a
 LOCAL_MATLAB_ENV = 	\
 		PYTHONPATH=$(shell pwd)/pycovis-matlab:$(shell pwd)/pycovis-postprocess
 
