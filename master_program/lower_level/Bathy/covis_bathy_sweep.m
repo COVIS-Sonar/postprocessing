@@ -209,6 +209,10 @@ end
 [ burst ] = covis_parse_bursts_pitch( png );
 
 
+% range of elev angles to process
+elev_start = (covis.processing.bounds.pitch.start);
+elev_stop = (covis.processing.bounds.pitch.stop);
+
 %% Main program
 % loop over bursts
 bad_ping = zeros(0);
@@ -216,6 +220,11 @@ bad_ping_count = 0;
 nbursts = length(burst);
 burst_count = 0;
 for nb = 1:nbursts
+        
+    % check elevation
+    if((burst(nb).pitch < elev_start) || (burst(nb).pitch > elev_stop))
+        continue;
+    end
 
     if(Verbose)
         fprintf('Burst %d: pitch %0.2f\n', nb, burst(nb).pitch);

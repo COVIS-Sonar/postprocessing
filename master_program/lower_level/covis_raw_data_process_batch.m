@@ -7,8 +7,8 @@
 
 
 %% set up raw data directories
-month = 9; % month in which the raw data was recorded
-raw_dir = sprintf('C:/COVIS/Axial/COVIS_data/raw/raw_data_combine/2018/%02d',month); % the directory in this line has to be changed to match the directory under which the raw data is stored
+month = 3; % month in which the raw data was recorded
+raw_dir = sprintf('C:/COVIS/Axial/COVIS_data/raw/raw_data_combine/2020/%02d',month); % the directory in this line has to be changed to match the directory under which the raw data is stored
 raw = dir(fullfile(raw_dir));
 e = 0;
 raw_path = cell(0);
@@ -23,11 +23,11 @@ end
 
 %% set up gridded data directories
 % Diffuse-flow data
-grid_dir_diff1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Diffuse_flow/2018/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
+grid_dir_diff1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Diffuse_flow/2020/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
 % Imaging data
-grid_dir_imag1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Imaging/2018/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
+grid_dir_imag1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Imaging/2020/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
 % Bathymetry data
-grid_dir_bath1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Bathy/2018/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
+grid_dir_bath1 = sprintf('C:/COVIS/Axial/COVIS_data/processed/Bathy/2020/%02d',month); % the directory in this line has to be changed to where the gridded data will be saved
 if ~exist(grid_dir_diff1,'dir')
     mkdir(grid_dir_diff1)
 end
@@ -82,9 +82,9 @@ for i = 3:length(raw)
 end
 
 %% Main loop
-for k = 1:length(raw_path)
+for k = 25:length(raw_path)
     raw_path1 = raw_path{k};
-    raw_file = dir(fullfile(raw_path1,'covis*'));
+    raw_file = dir(fullfile(raw_path1,'*diffuse*'));
     covis_out = cell(1,length(raw_file));
     save_flag = zeros(1,length(raw_file));
     for i = 1:length(raw_file)
