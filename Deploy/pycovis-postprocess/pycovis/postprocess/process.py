@@ -18,6 +18,8 @@ from minio.error import ResponseError
 from decouple import config
 from pyunpack import Archive
 
+logger = logging.getLogger(__name__)
+
 
 class ProcessResult:
 
@@ -30,8 +32,6 @@ def postprocessing_metadata():
         return covis.postproc_metadata()
 
 def process( inputFile, outputDir ):
-
-    logger = logging.getLogger(__name__)
 
     ## Parse the input file,
     inputPath = Path( inputFile ).resolve()
