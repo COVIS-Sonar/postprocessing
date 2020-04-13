@@ -5,7 +5,9 @@ import argparse
 import re
 import sys
 
+import io
 import os
+import logging
 
 from urllib.parse import urlparse
 import tempfile
@@ -17,11 +19,19 @@ from decouple import config
 from pyunpack import Archive
 
 
+class ProcessResult:
+
+    def __init__(self, stdout):
+        self.stdout = stdout
+
+
 def postprocessing_metadata():
     with runtime.Runtime() as covis:
         return covis.postproc_metadata()
 
 def process( inputFile, outputDir ):
+
+    logger = logging.getLogger(__name__)
 
     ## Parse the input file,
     inputPath = Path( inputFile ).resolve()
@@ -39,8 +49,8 @@ def process( inputFile, outputDir ):
     matOutput = basename + ".mat"
     matOutputPath = outputPath / matOutput
 
-    print("Processing input file: %s" % inputPath )
-    print("            to output: %s" % matOutputPath )
+    logger.info("Processing input file: %s" % inputPath )
+    logger.info("            to output: %s" % matOutputPath )
 
     if inputPath.is_dir():
         # Pass through if it is already unpacked
@@ -50,24 +60,21 @@ def process( inputFile, outputDir ):
         Archive( inputPath ).extractall( tempdir )
 
         for p in Path(tempdir).rglob("*/"):
-            print(p)
             if p.is_dir():
                 unpackedInput = p
                 break
 
     if not unpackedInput:
-        logging.error("Could not find unpacked input")
+        logger.error("Could not find unpacked input")
         return
 
-    print("Unpacked input file at: %s" % unpackedInput )
+    logger.debug("Unpacked input file at: %s" % unpackedInput )
 
-    ## Tough to diagnose what's happening with the unpacked archive
-    # for x in os.listdir( tempdir.name ):
-    #     print(x)
-    #
-    # for x in os.listdir( unpackedInput ):
-    #     print(x)
-
+    out = io.StringIO()
+    #err = io.StringIO()
 
     with runtime.Runtime() as covis:
-        result = covis.process( str(unpackedInput), str(matOutputPath) )
+        result = covis.process( str(unpackedInput), str(matOutputPath), stdout=out, stderr=out )
+
+    out.seek(0)
+    return ProcessResult( out )

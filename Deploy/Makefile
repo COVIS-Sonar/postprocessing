@@ -25,23 +25,23 @@ help:
 	@echo "make local_test_process"
 
 
-PP_CODE = $(shell find pycovis-postprocess -name "*.py" )
+PP_SRC = $(shell find pycovis-postprocess -name "*.py" )
 
 #== Tasks related to building and testing Docker scripts ==
-docker:  ${PP_CODE}
+docker:  ${PP_SRC}
 	docker build ${HTTP_PROXY_ARG} --tag ${IMAGE_TAG} .
 
-force_docker: ${PP_CODE}
+force_docker: ${PP_SRC}
 	docker build ${HTTP_PROXY_ARG} --tag ${IMAGE_TAG} --no-cache .
 
 push: build
 	docker push ${IMAGE_TAG}
 
 pytest: build
-	mkdir -p pytest_output/
+	mkdir -p tmp/pytest_output/
 	docker run --rm \
 						-v $(shell pwd)/../TestData/:/input \
-						-v $(shell pwd)/pytest_output:/output \
+						-v $(shell pwd)/tmp/pytest_output:/output \
 						${IMAGE_TAG}  -m pytest
 
 #						--workdir $(shell pwd)/pycovis-postprocess \

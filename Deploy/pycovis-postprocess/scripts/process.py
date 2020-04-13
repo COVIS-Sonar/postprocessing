@@ -23,6 +23,11 @@ parser.add_argument('inputFile', help='COVIS file to parse')
 parser.add_argument("--output",  help="Directory for output",
                         dest="outputDir", default="/output")
 
+logging.basicConfig(level=logging.DEBUG)
+
 args = parser.parse_args()
 
-process.process( args.inputFile, args.outputDir )
+result = process.process( args.inputFile, args.outputDir )
+
+for line in result.stdout:
+    logging.info(line.rstrip())
