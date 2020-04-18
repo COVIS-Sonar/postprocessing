@@ -47,7 +47,6 @@ zb(rb<4) = nan;
 
 
 % plot 3D image
-figure
 % add bathy
 pbathy=surf(xb,yb,zb);
 axis image;
@@ -103,6 +102,7 @@ xlabel('Easting of COVIS ( m )')
 ylabel('Northing of COVIS ( m )')
 zlabel('Height above COVIS base ( m )')
 
+title(covis.sweep.name);
 h = rotate3d;
 set(h, 'ActionPreCallback', 'set(gcf,''windowbuttonmotionfcn'',@align_axislabel)')
 set(h, 'ActionPostCallback', 'set(gcf,''windowbuttonmotionfcn'','''')')
