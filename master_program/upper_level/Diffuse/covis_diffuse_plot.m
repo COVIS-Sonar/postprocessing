@@ -39,26 +39,26 @@ yg = grid.y;
 v = grid.v;
 
 % load bathymetry data
-% swp_name = covis.sweep.name;
-% swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
-% if swp_date<=datenum(2019,7,6)
-%     bathy_file = sprintf('covis_bathy_2018.mat');
-% elseif swp_date<=datenum(2019,11,23)
-%     bathy_file = sprintf('covis_bathy_2019a.mat');
-% else
-%     bathy_file = sprintf('covis_bathy_2019b.mat');
-% end
-% bathy = load(bathy_file);
-% xb = bathy.covis.grid.x;
-% yb = bathy.covis.grid.y;
-% zb = bathy.covis.grid.v;
+swp_name = covis.sweep.name;
+swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
+if swp_date<=datenum(2019,7,6)
+    bathy_file = sprintf('covis_bathy_2018.mat');
+elseif swp_date<=datenum(2019,11,23)
+    bathy_file = sprintf('covis_bathy_2019a.mat');
+else
+    bathy_file = sprintf('covis_bathy_2019b.mat');
+end
+bathy = load(bathy_file);
+xb = bathy.covis.grid.x;
+yb = bathy.covis.grid.y;
+zb = bathy.covis.grid.v;
 
 % create the map
 figure
 pcolorjw(xg,yg,v);
 axis image;
 hold on;
-%contour(xb,yb,zb,[-2:0.5:4],'k');
+contour(xb,yb,zb,[-2:0.5:4],'k');
 plot(0,0,'.g','markersize',15);
 hold off;
 xlabel('Easting of COVIS ( m )');
