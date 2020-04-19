@@ -82,14 +82,14 @@ swp_dir = fullfile(swp_path, swp_name);
 
 % check that archive dir exists
 if(~exist(swp_dir,'dir'))
-    error('Sweep directory does not exist\n');
+    error('Sweep directory %s does not exist\n',swp_dir);
 end
 
 
 % parse sweep.json file in data archive
 swp_file = 'sweep.json';
 if(~exist(fullfile(swp_dir, swp_file),'file'))
-    error('sweep.json file does not exist\n');
+    error('sweep.json file does not exist in %s\n', swp_name);
 end
 json_str = fileread(fullfile(swp_dir, swp_file));
 swp = parse_json(json_str);
@@ -110,8 +110,7 @@ end
 json_str = fileread(json_file);
 covis = parse_json(json_str);
 if(strcmpi(covis.type, 'diffuse') == 0)
-    fprintf('Incorrect covis input file type\n');
-    return;
+    error('Incorrect covis input file type. Looking for: diffuse, Current type: %s\n',covis.type);
 end
 
 % Define global variable Verbose and read its value from the json file
@@ -178,9 +177,9 @@ nfiles = length(file);
 % check if there are missing json or binary files
 json_file = dir(fullfile(swp_dir, '*.json'));
 if length(json_file)<nfiles
-    fprintf('there are %d json files missing in the sweep', nfiles-length(json_file));
+    fprintf('Warning: there are %d json files missing in the sweep', nfiles-length(json_file));
 elseif length(json_file)>nfiles
-    fprintf('there are %d bin files missing in the sweep', length(json_file)-nfiles);
+    fprintf('Warning: there are %d bin files missing in the sweep', length(json_file)-nfiles);
 end
 
 % read ping meta data from json file
@@ -204,7 +203,7 @@ cwovlap = round(window_overlap*cwsize);
 % in csv format
 ind_file = 'index.csv';
 if ~exist(fullfile(swp_dir,ind_file),'file')
-    error('csv file does not exist')
+    error('csv file does not exist in %', swp_dir)
 else
     if(Verbose)
         fprintf('Parsing %s\n', fullfile(swp_dir, ind_file));
@@ -246,7 +245,7 @@ for np = 1:nping
     ping_num = png(np).num;
     bin_file = sprintf('rec_7038_%06d.bin',ping_num);
     if ~exist(fullfile(swp_dir,bin_file),'file')
-        fprintf('binary file missing for ping:%d\n',ping_num)
+        fprintf('Warning: binary file missing for ping:%d\n',ping_num)
         continue
     end
     
@@ -265,7 +264,7 @@ for np = 1:nping
     try
         [hdr, data1] = covis_read(fullfile(swp_dir, bin_file));
     catch
-        fprintf('error reading ping %d\n',ping_num);
+        fprintf('Warning: error reading ping %d\n',ping_num);
         bad_ping_count = bad_ping_count + 1;
         bad_ping(bad_ping_count) = ping_num;
         continue;
@@ -296,7 +295,7 @@ for np = 1:size(data,3)
     try
         data1 = covis_phase_correct(png(np), data0, data1);
     catch
-        fprintf('error in phase correction for ping: %d\n',png(np).num)
+        fprintf('Warning: error in phase correction for ping: %d\n',png(np).num)
         continue
     end
     % define beamformer parameters
@@ -312,7 +311,7 @@ for np = 1:size(data,3)
     try
         [data1, filt, png(np)] = covis_filter(data1, filt, png(np));
     catch
-        fprintf('error in filtering ping: %d\n',png(np).num)
+        fprintf('Warning: error in filtering ping: %d\n',png(np).num)
         continue;
     end
     
@@ -320,14 +319,14 @@ for np = 1:size(data,3)
     try
         [bfm, bf_sig1] = covis_beamform(bfm, data1);
     catch
-        fprintf('error in beamforming for ping: %d\n',png(np).num)
+        fprintf('Warning: error in beamforming for ping: %d\n',png(np).num)
         continue;
     end
     % apply calibration to beamformed data
     try
         bf_sig1 = covis_calibration(bf_sig1, bfm, png(np), cal,T,S,pH,lat,depth);
     catch
-        fprintf('error in calibrating ping: %d\n',png(np).num)
+        fprintf('Warning: error in calibrating ping: %d\n',png(np).num)
         continue;
     end
     
@@ -397,7 +396,7 @@ for np = 1:size(bf_sig_t_sub,3)
     try
         [cov,E1,E2,rc] = covis_covar_hamming(bf_sig1, bf_sig2, range, cwsize, cwovlap);
     catch
-        fprintf('error in calculating decorrelation between pings %d and %d\n',png(np).num,png(np2).num)
+        fprintf('Warning: error in calculating decorrelation between pings %d and %d\n',png(np).num,png(np2).num)
         continue
     end
     I2 = sqrt(E1.*E2);
