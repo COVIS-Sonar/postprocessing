@@ -72,7 +72,7 @@ end
 % parse sweep.json file in data archive
 swp_file = 'sweep.json';
 if(~exist(fullfile(swp_dir, swp_file),'file'))
-    disp('sweep.json file does not exist in %s',swp_file);
+    disp('sweep.json file does not exist in %s',swp_dir);
     return;
 end
 json_str = fileread(fullfile(swp_dir, swp_file));
