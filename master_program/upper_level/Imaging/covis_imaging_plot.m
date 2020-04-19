@@ -47,6 +47,7 @@ zb(rb<4) = nan;
 
 
 % plot 3D image
+figure(1)
 % add bathy
 pbathy=surf(xb,yb,zb);
 axis image;
@@ -74,7 +75,6 @@ isosurf{3}.value = -40;
 isosurf{1}.alpha = 0.1;
 isosurf{2}.alpha = 0.2;
 isosurf{3}.alpha = 0.3;
-
 for n=1:length(isosurf)
     v = vg;
     eps = nan;
@@ -101,7 +101,6 @@ camlight('headlight');
 xlabel('Easting of COVIS ( m )')
 ylabel('Northing of COVIS ( m )')
 zlabel('Height above COVIS base ( m )')
-
 title(covis.sweep.name);
 h = rotate3d;
 set(h, 'ActionPreCallback', 'set(gcf,''windowbuttonmotionfcn'',@align_axislabel)')
