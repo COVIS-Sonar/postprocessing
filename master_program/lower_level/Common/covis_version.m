@@ -4,4 +4,4 @@ function verstr = covis_version()
 % processing code.  Also useful as a test function.
 %
 
-    verstr = 'COVIS Post-processing v2.0';
+    verstr = 'COVIS Post-processing v2.0.1';

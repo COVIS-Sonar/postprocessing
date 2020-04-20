@@ -621,6 +621,7 @@ if fig==1
 
     figure
     sp2 = covis.grid{6}.v;
+    sp2(sp2==0) = nan;
     pcolorjw(xg,yg,sp2);
     shading flat
     axis image;
@@ -636,6 +637,7 @@ if fig==1
 
     figure
     kp = covis.grid{7}.v;
+    kp(kp==0) = nan;
     pcolorjw(xg,yg,kp);
     shading flat
     axis image;
