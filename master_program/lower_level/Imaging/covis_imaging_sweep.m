@@ -270,6 +270,13 @@ for nb = 1:nbursts
             continue
         end
         
+        if isempty(data)
+            fprintf('Warning: error reading ping %d at pitch %f\n',ping_num, burst(nb).pitch);
+            bad_ping_count = bad_ping_count + 1;
+            bad_ping(bad_ping_count) = ping_num;
+            continue;
+        end
+        
         ping_count = ping_count+1;
         if(ping_count == 1)
             monitor = data;
