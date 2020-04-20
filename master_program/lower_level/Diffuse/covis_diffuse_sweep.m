@@ -9,7 +9,7 @@
 %  --more adjustable parameters used in processing are added to the metadata in the output structure
 %  --version number of the code is added to the metadata in the output structure
 
-function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
+%function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % Input
 %  swp_path: sweep directory
 %  swp_name: sweep name
@@ -24,6 +24,9 @@ function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % json_file = 0;
 % fig = 1;
 
+
+json_file = 0;
+fig = 1;
 %% Initialization
 
 % version number of the code
@@ -264,6 +267,12 @@ for np = 1:nping
     try
         [hdr, data1] = covis_read(fullfile(swp_dir, bin_file));
     catch
+        fprintf('Warning: error reading ping %d\n',ping_num);
+        bad_ping_count = bad_ping_count + 1;
+        bad_ping(bad_ping_count) = ping_num;
+        continue;
+    end
+    if isempty(data1)
         fprintf('Warning: error reading ping %d\n',ping_num);
         bad_ping_count = bad_ping_count + 1;
         bad_ping(bad_ping_count) = ping_num;
@@ -650,4 +659,4 @@ if fig==1
     hold off;
     title('Normalized Amplitude Variance');
 end
-end
+%end
