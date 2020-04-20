@@ -5,6 +5,9 @@ help:
 	@echo "make testdata  										 Run \'make download\" in TestData/"
 
 
+process:
+	matlab -nodisplay -nosplash -r "initial_matlab_process()"
+
 ## By default run the shorter unit test
 test: unittest
 
@@ -37,4 +40,4 @@ testdata:
 	cd TestData && make download
 
 
-.PHONY: test unittest integrationtest covis_test_data deps gsw testdata
+.PHONY: test unittest integrationtest covis_test_data deps gsw testdata process
