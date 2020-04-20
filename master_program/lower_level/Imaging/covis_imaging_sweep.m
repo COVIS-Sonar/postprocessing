@@ -1,3 +1,5 @@
+function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
+
 % This function process the raw data recorded in COVIS's Imaging mode to
 % generate gridded data that is saved in the 'covis' structure array
 
@@ -8,8 +10,6 @@
 %    structure
 %  --version number of the code is added to the metadata in the output structure
 
-
-function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 % Input:
 %  swp_path: raw data directory
 %  swp_name: name of raw data sweep
@@ -25,7 +25,6 @@ function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 %  swp_name = 'COVIS-20190706T054420-imaging1';
 %  json_file = 0;
 %  fig = 1;
-
 
 %% Initialization
 
@@ -220,24 +219,24 @@ bad_ping_count = 0;
 nbursts = length(burst);
 burst_count = 0;
 for nb = 1:nbursts
-    
+
     % check elevation
     if((burst(nb).pitch < elev_start) || (burst(nb).pitch > elev_stop))
         continue;
     end
-    
+
     if(Verbose)
         fprintf('Burst %d: pitch %f\n', nb, burst(nb).pitch);
     end
-    
+
     npings = burst(nb).npings;
-    
+
     % check that there's enough pings in burst
     if((npings < 2))
         fprintf('Not enough pings in burst\n');
         continue;
     end
-    
+
     % loop over pings in a burst
     ping_count = 0;
     for np = 1:npings
@@ -253,14 +252,14 @@ for nb = 1:nbursts
         pitch = (pi/180) * png(ip).sen_pitch;
         roll = (pi/180) * png(ip).sen_roll;
         yaw = (pi/180) * png(ip).rot_yaw;
-        
+
         if(Verbose > 1)
             fprintf('Reading %s\n', fullfile(swp_dir, bin_file));
         end
         if(Verbose > 2)
             fprintf('Pitch %f, roll %f, yaw %f\n',pitch*180/pi, roll*180/pi, yaw*180/pi);
         end
-        
+
         % read raw element quadrature data
         try
             [hdr, data] = covis_read(fullfile(swp_dir, bin_file));
@@ -270,7 +269,7 @@ for nb = 1:nbursts
             bad_ping(bad_ping_count) = ping_num;
             continue
         end
-        
+
         ping_count = ping_count+1;
         if(ping_count == 1)
             monitor = data;
@@ -278,7 +277,7 @@ for nb = 1:nbursts
             I_out = nan(size(bf_sig_out));
             Isq_out = nan(size(bf_sig_out));
         end
-        
+
         % Correct phase using first ping as reference
         try
             data = covis_phase_correct(png(ip), monitor, data);
@@ -288,7 +287,7 @@ for nb = 1:nbursts
             bad_ping(bad_ping_count) = ping_num;
             continue
         end
-        
+
         % Apply Filter to data
         try
             [data, filt, png(n)] = covis_filter(data, filt, png(n));
@@ -298,7 +297,7 @@ for nb = 1:nbursts
             bad_ping(bad_ping_count) = ping_num;
             continue
         end
-        
+
         % define beamformer parameters
         bfm.fc = png(ip).hdr.xmit_freq;
         bfm.c = c;
@@ -307,7 +306,7 @@ for nb = 1:nbursts
         bfm.last_samp = hdr.last_samp;
         bfm.start_angle = -54;
         bfm.end_angle = 54;
-        
+
         % conduct beamforming
         try
             [bfm, bf_sig] = covis_beamform(bfm, data);
@@ -325,7 +324,7 @@ for nb = 1:nbursts
         fprintf('no valid pings at pitch %f\n',burst(nb).pitch);
         continue
     end
-    
+
     burst_count = burst_count+1;
     if burst_count == 1
         xv_out = nan(size(bf_sig,1),size(bf_sig,2),nbursts);
@@ -337,20 +336,20 @@ for nb = 1:nbursts
         Id_filt_out = nan(size(xv_out));
         Kp_out = nan(size(xv_out));
     end
-    
+
     % calculate SI
     Kp = nanmean(abs(bf_sig_out).^2,3)./nanmean(abs(bf_sig_out),3).^2-1;
-    
+
     % ping average
     average = nanmean(bf_sig_out,3);
     bf_sig_a = abs(average);
     bf_sig_d = sqrt(nanmean(abs(bf_sig_out-repmat(average,1,1,size(bf_sig_out,3))).^2,3)); % remove the average to enhance plume signals
-    
+
     % calculate signal to noise ratio
     snr_a = 20*log10(abs(bf_sig_a)./noise_floor);
     snr_d = 20*log10(abs(bf_sig_d)./noise_floor);
-    
-    
+
+
     % OSCFAR detection section
     % magnitude squared of the beamformed output
     mag2 = bf_sig_d .* conj(bf_sig_d);
@@ -360,7 +359,7 @@ for nb = 1:nbursts
     dBmag = 10*log10(mag2);
     dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
     indexD_d = dBSCR > scrthreshold; % detected samples
-    
+
     % magnitude squared of the beamformed output
     mag2 = bf_sig_a .* conj(bf_sig_a);
     % determine the specified quantile at each range (time) step
@@ -369,7 +368,7 @@ for nb = 1:nbursts
     dBmag = 10*log10(mag2);
     dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
     indexD_a = dBSCR > scrthreshold; % detected samples
-    
+
     % calibration
     try
         bf_sig_d_cal = covis_calibration(bf_sig_d, bfm, png(n), cal,T, S, pH, lat,depth);
@@ -378,12 +377,12 @@ for nb = 1:nbursts
         fprintf('error in calibration at pitch %f\n',burst(nb).pitch);
         continue
     end
-    
+
     Id = abs(bf_sig_d_cal).^2;
     Ia = abs(bf_sig_a_cal).^2;
     Id_filt = Id;
     Ia_filt = Ia;
-    
+
     % mask out data with low snr
     Id_filt(snr_d<snr_thresh) = 10^-9;
     Id_filt(~indexD_d) = 10^-9;
@@ -392,13 +391,13 @@ for nb = 1:nbursts
     Ia_filt(~indexD_a) = 10^-9;
     Ia(snr_a<snr_thresh) = 10^-9;
     Kp(snr_d<snr_thresh) = 0;
-    
-    
-    
+
+
+
     % transform sonar coords into world coords
     range = bfm.range;
     azim = bfm.angle;
-    
+
     [xv, yv, zv] = covis_coords_darrell(origin, range, azim, yaw, roll, pitch, central_head, pos.declination);
     xv_out(:,:,nb) = xv;
     yv_out(:,:,nb) = yv;
@@ -449,5 +448,4 @@ covis.bad_ping = bad_ping;
 % plot plume image
 if fig == 1
     covis_imaging_plot(covis);
-end
 end

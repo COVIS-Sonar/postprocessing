@@ -26,6 +26,8 @@ if strcmp(ext,'.gz')
 elseif strcmp(ext,'.7z')
     filename = fullfile(raw_path,raw_name);
     [~,~] = system(['"C:\Program Files\7-Zip\7z.exe" -y x ' '"' filename '"' ' -o' '"' raw_path '"']);
+elseif isfolder( fullfile(raw_path,raw_name) )
+    % No action, should just work
 else
     error('unrecognized data format')
 end
@@ -37,7 +39,8 @@ switch swp_type
         disp(['now processing imaging file: ',swp_name])
         try
             covis = covis_imaging_sweep(raw_path,swp_name,0,fig);
-        catch
+        catch ME
+            warning(['Exception: ', ME.message, ' at ', ME.stack(1).file, ' line ', int2str(ME.stack(1).line) ])
             disp(['Bad sweep:',swp_name])
             try
                 rmdir(fullfile(raw_path,swp_name),'s');
