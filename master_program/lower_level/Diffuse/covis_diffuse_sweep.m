@@ -9,7 +9,7 @@
 %  --more adjustable parameters used in processing are added to the metadata in the output structure
 %  --version number of the code is added to the metadata in the output structure
 
-%function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
+function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % Input
 %  swp_path: sweep directory
 %  swp_name: sweep name
