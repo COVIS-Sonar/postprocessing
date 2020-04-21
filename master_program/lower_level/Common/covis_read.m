@@ -19,7 +19,7 @@ function [hdr, data] = covis_read( file )
 % ----------
 % Version 1.0 - cjones@apl.washington.edu 06/2010
 % Version 2.0 - Mike Kenny 08/2018
-global Verbose
+
 
 format = 'ieee-le';
 fp = fopen(file,'r',format);

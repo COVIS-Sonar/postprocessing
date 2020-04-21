@@ -62,13 +62,13 @@ swp_dir = fullfile(swp_path, swp_name);
 
 % check that archive dir exists
 if(~exist(swp_dir,'dir'))
-    error('Sweep directory does not exist\n');
+    error('Sweep directory %s does not exist\n',swp_dir);
 end
 
 % parse sweep.json file in data archive
 swp_file = 'sweep.json';
 if(~exist(fullfile(swp_dir, swp_file),'file'))
-    disp('sweep.json file does not exist');
+    disp('sweep.json file does not exist in %s',swp_dir);
     return;
 end
 json_str = fileread(fullfile(swp_dir, swp_file));
@@ -91,8 +91,7 @@ end
 json_str = fileread(json_file);
 covis = parse_json(json_str);
 if(strcmpi(covis.type, 'imaging') == 0)
-    fprintf('Incorrect covis input file type\n');
-    return;
+    error('Incorrect covis input file type. Looking for: imaging, Current type: %s\n',covis.type);
 end
 
 % Define global variable Verbose and read its value from the json file
@@ -156,9 +155,9 @@ nfiles = length(file);
 % check if there are missing json files
 json_file = dir(fullfile(swp_dir, '*.json'));
 if length(json_file)<nfiles
-    fprintf('there are %d json files missing in the sweep', nfiles-length(json_file));
+    fprintf('Warning: there are %d json files missing in the sweep', nfiles-length(json_file));
 elseif length(json_file)>nfiles
-    fprintf('there are %d bin files missing in the sweep', length(json_file)-nfiles);
+    fprintf('Warning: there are %d bin files missing in the sweep', length(json_file)-nfiles);
 end
 
 % read ping meta data from json file
@@ -230,7 +229,7 @@ for nb = 1:nbursts
 
     % check that there's enough pings in burst
     if((npings < 2))
-        fprintf('Not enough pings in burst\n');
+        fprintf('Warning: not enough pings in burst\n');
         continue;
     end
 
@@ -241,7 +240,7 @@ for nb = 1:nbursts
         % read the corresponding binary file
         bin_file = sprintf('rec_7038_%06d.bin',ping_num);
         if ~exist(fullfile(swp_dir,bin_file),'file')
-            fprintf('binary file missing for ping:%d\n',ping_num)
+            fprintf('Warning: binary file missing for ping:%d\n',ping_num)
             continue
         end
         ip = find([png.num]==ping_num);
@@ -261,10 +260,17 @@ for nb = 1:nbursts
         try
             [hdr, data] = covis_read(fullfile(swp_dir, bin_file));
         catch
-            fprintf('error reading ping %d at pitch %f\n',ping_num,burst(nb).pitch);
+            fprintf('Warning: error reading ping %d at pitch %f\n',ping_num,burst(nb).pitch);
             bad_ping_count = bad_ping_count + 1;
             bad_ping(bad_ping_count) = ping_num;
             continue
+        end
+
+        if isempty(data)
+            fprintf('Warning: error reading ping %d at pitch %f\n',ping_num, burst(nb).pitch);
+            bad_ping_count = bad_ping_count + 1;
+            bad_ping(bad_ping_count) = ping_num;
+            continue;
         end
 
         ping_count = ping_count+1;
@@ -279,7 +285,7 @@ for nb = 1:nbursts
         try
             data = covis_phase_correct(png(ip), monitor, data);
         catch
-            fprintf('error in phase correction for ping %d at pitch %f\n',ping_num,burst(nb).pitch);
+            fprintf('Warning: error in phase correction for ping %d at pitch %f\n',ping_num,burst(nb).pitch);
             bad_ping_count = bad_ping_count + 1;
             bad_ping(bad_ping_count) = ping_num;
             continue
@@ -289,7 +295,7 @@ for nb = 1:nbursts
         try
             [data, filt, png(n)] = covis_filter(data, filt, png(n));
         catch
-            fprintf('error in filtering ping %d at pitch %f\n',ping_num,burst(nb).pitch);
+            fprintf('Warning: error in filtering ping %d at pitch %f\n',ping_num,burst(nb).pitch);
             bad_ping_count = bad_ping_count + 1;
             bad_ping(bad_ping_count) = ping_num;
             continue
@@ -308,7 +314,7 @@ for nb = 1:nbursts
         try
             [bfm, bf_sig] = covis_beamform(bfm, data);
         catch
-            fprintf('error in beamforming for ping %d at pitch %f\n',ping_num,burst(nb).pitch);
+            fprintf('Warning: error in beamforming for ping %d at pitch %f\n',ping_num,burst(nb).pitch);
             bad_ping_count = bad_ping_count + 1;
             bad_ping(bad_ping_count) = ping_num;
             continue
@@ -318,7 +324,7 @@ for nb = 1:nbursts
         Isq_out(:,:,np) = abs(bf_sig).^4;
     end
     if all(isnan(bf_sig_out(:)))
-        fprintf('no valid pings at pitch %f\n',burst(nb).pitch);
+        fprintf('Warning: no valid pings at pitch %f\n',burst(nb).pitch);
         continue
     end
 
@@ -371,7 +377,7 @@ for nb = 1:nbursts
         bf_sig_d_cal = covis_calibration(bf_sig_d, bfm, png(n), cal,T, S, pH, lat,depth);
         bf_sig_a_cal = covis_calibration(bf_sig_a, bfm, png(n), cal,T, S, pH, lat,depth);
     catch
-        fprintf('error in calibration at pitch %f\n',burst(nb).pitch);
+        fprintf('Warning: error in calibration at pitch %f\n',burst(nb).pitch);
         continue
     end
 
