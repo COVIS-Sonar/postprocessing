@@ -29,9 +29,6 @@ function covis = covis_bathy_sweep(swp_path, swp_name, json_file, fig)
 %% Initialization
 % define cali_year for selection between 2010 and 2018 calibration files
 
-% version number of the code
-version_no = '2.0';
-
 % sonar's central yaw and heading
 year = swp_name(7:10);
 central_yaw = 135; % central yaw motor reading
@@ -220,7 +217,7 @@ bad_ping_count = 0;
 nbursts = length(burst);
 burst_count = 0;
 for nb = 1:nbursts
-        
+
     % check elevation
     if((burst(nb).pitch < elev_start) || (burst(nb).pitch > elev_stop))
         continue;
@@ -271,6 +268,13 @@ for nb = 1:nbursts
             continue
         end
 
+        if isempty(data)
+            fprintf('Warning: error reading ping %d at pitch %f\n',ping_num, burst(nb).pitch);
+            bad_ping_count = bad_ping_count + 1;
+            bad_ping(bad_ping_count) = ping_num;
+            continue;
+        end
+
         ping_count = ping_count+1;
         if(ping_count == 1)
             monitor = data;
@@ -288,7 +292,14 @@ for nb = 1:nbursts
         end
 
         % Apply Filter to data
-        [data, filt, png(n)] = covis_filter(data, filt, png(n));
+        try
+            [data, filt, png(n)] = covis_filter(data, filt, png(n));
+        catch
+            fprintf('Warning: error in filtering ping %d at pitch %f\n',ping_num,burst(nb).pitch);
+            bad_ping_count = bad_ping_count + 1;
+            bad_ping(bad_ping_count) = ping_num;
+            continue
+        end
 
         % define beamformer parameters
         bfm.fc = png(n).hdr.xmit_freq;
@@ -310,11 +321,12 @@ for nb = 1:nbursts
         end
         bf_sig_out(:,:,np) = bf_sig;
     end
+
     if all(isnan(bf_sig_out(:)))
         fprintf('no valid pings at pitch %f\n',burst(nb).pitch);
         continue
     end
-    
+
     burst_count = burst_count+1;
     if burst_count == 1
         xb_out = nan(bfm.num_beams,nbursts);
@@ -374,7 +386,7 @@ grd_out.v(grd_out.v==0) = nan;
 
 
 % save local copies of covis structs
-covis.release = version_no;
+covis.release = covis_version().version_number;
 covis.grid = grd_out;
 covis.sweep = swp;
 covis.ping = png;

@@ -1,5 +1,5 @@
 
-%% Matlab -nodisplay
+%% matlab -nodisplay -nosplash -r "initial_matlab_process()"
 
 addpath(genpath('master_program'))
 addpath(genpath('ThirdParty/GSW/'))
@@ -8,3 +8,5 @@ addpath(genpath('ThirdParty/GSW/'))
 
 covis = covis_raw_sweep('TestData/2020/04/19/','COVIS-20200419T003001-diffuse1.7z',0)
 save('COVIS-20200419T003001-diffuse1.mat', 'covis')
+
+exit()

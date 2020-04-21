@@ -19,6 +19,7 @@ COMMA := ,
 
 
 unittest: covis_test_data
+	## postproc_metadata test assumes this tag has been set!
 	git tag -f test
 	cd Test/Unit/ && matlab -nodisplay -nosplash -r "  addpath('..',${subst $(SPACE),$(COMMA),$(patsubst %,'%',$(ALL_MATLAB_PATHS))}); result = runtests(); disp(result); exit()"
 

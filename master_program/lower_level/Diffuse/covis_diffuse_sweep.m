@@ -26,9 +26,6 @@ function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 
 %% Initialization
 
-% version number of the code
-version_no = '2.0';
-
 % sonar's central yaw and heading
 year = swp_name(7:10);
 central_yaw = 135; % central yaw motor reading
@@ -541,7 +538,7 @@ for k = 1:length(covis.grid)
 end
 
 % save metadata into the covis structure
-covis.release = version_no;
+covis.release = covis_version().version_number;
 covis.sweep = swp;
 covis.ping = png;
 covis.sonar.position = pos;

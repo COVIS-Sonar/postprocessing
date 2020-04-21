@@ -28,9 +28,6 @@ function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 
 %% Initialization
 
-% version number of the code
-version_no = '2.0';
-
 % sonar's central yaw and heading
 year = swp_name(7:10);
 central_yaw = 135; % central yaw motor reading
@@ -429,7 +426,7 @@ grd_out.Id_filt(n) = grd_out.Id_filt(n)./grd_out.w(n);
 grd_out.Kp(n) = grd_out.Kp(n)./grd_out.w(n);
 
 % save local copies of covis structs
-covis.release = version_no;
+covis.release = covis_version().version_number;
 covis.sweep = swp;
 covis.grid = grd_out;
 covis.ping = png;
