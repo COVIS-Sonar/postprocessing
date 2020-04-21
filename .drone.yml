@@ -1,88 +1,88 @@
 
-
-pipeline:
-  # restore_cache:
-  #   image: drillster/drone-volume-cache:latest
-  #   restore: true
-  #   mount:
-  #     - /var/lib/docker
-  #     - /srv/input
-  #   volumes:
-  #     - /tmp/cache:/cache
-
-  ## Build Matlab extension on remote machine
-  build_matlab:
-    image: amarburg/remote-compile:latest
-    hosts: matlab.san.apl.washington.edu
-    user: matlab
-    target: tempdir
-    exclude: .git/
-    script:
-      - cd Deploy && make build_matlab
-    secrets: [ ssh_privkey ]
-
-  ## Build a test docker image
-  build_docker:
-    image: docker:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-      - cd Deploy && docker build -t amarburg/covis-postprocess:latest -t amarburg/covis-postprocess:${DRONE_REPO_OWNER}-latest -t amarburg/covis-postprocess:${DRONE_REPO_OWNER}-${DRONE_COMMIT_SHA} .
-
-  get_test_data:
-    image: minio/mc:latest
-    volumes:
-      - /srv/input:/input
-    commands:
-      - mc config host add nas http://nas-docker.san.apl.washington.edu:9000/ "" ""
-      - cd /input && mc cp --recursive nas/covis-test-data .
-
-  ## Test a docker image
-  pytest_in_docker:
-    image: docker:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /srv/input:/input:ro
-    commands:
-      - ls -l /input
-      - docker run -i --rm amarburg/covis-postprocess:latest -m pytest
-
-  ## Publish resulting image to DockerHub
-  publish_docker:
-    image: docker:latest
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    commands:
-      - docker login -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD}
-      - docker push amarburg/covis-postprocess:latest
-      - docker push amarburg/covis-postprocess:${DRONE_REPO_OWNER}-latest
-      - docker push amarburg/covis-postprocess:${DRONE_REPO_OWNER}-${DRONE_COMMIT_SHA}
-    secrets:
-      - docker_username
-      - docker_password
-
-
-  trigger-downstream:
-    image: plugins/downstream
-    server: https://drone.san.apl.washington.edu:8000
-    fork: true
-    repositories:
-      - ${DRONE_REPO_OWNER}/covis-worker
-    secrets: [ downstream_token ]
-
-  # rebuild_cache:
-  #   image: drillster/drone-volume-cache:latest
-  #   rebuild: true
-  #   mount:
-  #     - /var/lib/docker
-  #     - /srv/input
-  #   volumes:
-  #     - /tmp/cache:/cache
-
-  slack:
-    image: plugins/slack
-    secrets: [ slack_webhook ]
-    when:
-      status:
-        - success
-        - failure
+#
+# pipeline:
+#   # restore_cache:
+#   #   image: drillster/drone-volume-cache:latest
+#   #   restore: true
+#   #   mount:
+#   #     - /var/lib/docker
+#   #     - /srv/input
+#   #   volumes:
+#   #     - /tmp/cache:/cache
+#
+#   ## Build Matlab extension on remote machine
+#   build_matlab:
+#     image: amarburg/remote-compile:latest
+#     hosts: matlab.san.apl.washington.edu
+#     user: matlab
+#     target: tempdir
+#     exclude: .git/
+#     script:
+#       - cd Deploy && make build_matlab
+#     secrets: [ ssh_privkey ]
+#
+#   ## Build a test docker image
+#   build_docker:
+#     image: docker:latest
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock
+#     commands:
+#       - cd Deploy && docker build -t amarburg/covis-postprocess:latest -t amarburg/covis-postprocess:${DRONE_REPO_OWNER}-latest -t amarburg/covis-postprocess:${DRONE_REPO_OWNER}-${DRONE_COMMIT_SHA} .
+#
+#   get_test_data:
+#     image: minio/mc:latest
+#     volumes:
+#       - /srv/input:/input
+#     commands:
+#       - mc config host add nas http://nas-docker.san.apl.washington.edu:9000/ "" ""
+#       - cd /input && mc cp --recursive nas/covis-test-data .
+#
+#   ## Test a docker image
+#   pytest_in_docker:
+#     image: docker:latest
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock
+#       - /srv/input:/input:ro
+#     commands:
+#       - ls -l /input
+#       - docker run -i --rm amarburg/covis-postprocess:latest -m pytest
+#
+#   ## Publish resulting image to DockerHub
+#   publish_docker:
+#     image: docker:latest
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock
+#     commands:
+#       - docker login -u $${DOCKER_USERNAME} -p $${DOCKER_PASSWORD}
+#       - docker push amarburg/covis-postprocess:latest
+#       - docker push amarburg/covis-postprocess:${DRONE_REPO_OWNER}-latest
+#       - docker push amarburg/covis-postprocess:${DRONE_REPO_OWNER}-${DRONE_COMMIT_SHA}
+#     secrets:
+#       - docker_username
+#       - docker_password
+#
+#
+#   trigger-downstream:
+#     image: plugins/downstream
+#     server: https://drone.san.apl.washington.edu:8000
+#     fork: true
+#     repositories:
+#       - ${DRONE_REPO_OWNER}/covis-worker
+#     secrets: [ downstream_token ]
+#
+#   # rebuild_cache:
+#   #   image: drillster/drone-volume-cache:latest
+#   #   rebuild: true
+#   #   mount:
+#   #     - /var/lib/docker
+#   #     - /srv/input
+#   #   volumes:
+#   #     - /tmp/cache:/cache
+#
+#   slack:
+#     image: plugins/slack
+#     secrets: [ slack_webhook ]
+#     when:
+#       status:
+#         - success
+#         - failure
