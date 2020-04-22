@@ -23,8 +23,7 @@ function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 % Example
 %  swp_path = 'C:\COVIS\Axial\COVIS_data\raw\raw_data_combine\2019\07\06';
 %  swp_name = 'COVIS-20190706T054420-imaging1';
-%  json_file = 0;
-%  fig = 1;
+
 
 %% Initialization
 
