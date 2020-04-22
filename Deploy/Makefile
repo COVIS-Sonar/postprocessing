@@ -78,6 +78,12 @@ imaging1.7z_from_local: build
  					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.7z --output /output/
 
 
+COVIS-20200421T133002-diffuse1.7z_from_local: build
+	mkdir -p output/
+	docker run --rm ${TEST_DOCKER_MOUNTS} \
+ 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py --output /output/ /input/2020/04/21/COVIS-20200421T133002-diffuse1.7z
+
+
 
 ##== Tasks which run the Python library locally ==
 

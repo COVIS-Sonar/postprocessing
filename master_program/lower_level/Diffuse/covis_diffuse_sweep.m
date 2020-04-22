@@ -25,8 +25,7 @@ function covis = covis_diffuse_sweep(swp_path, swp_name, json_file, fig)
 % fig = 1;
 
 
-json_file = 0;
-fig = 1;
+
 %% Initialization
 
 % sonar's central yaw and heading
@@ -269,7 +268,7 @@ for np = 1:nping
         bad_ping(bad_ping_count) = ping_num;
         continue;
     end
-    if isempty(data1)
+    if isempty(data1) || size(data1,2)~=128
         fprintf('Warning: error reading ping %d\n',ping_num);
         bad_ping_count = bad_ping_count + 1;
         bad_ping(bad_ping_count) = ping_num;
@@ -656,4 +655,4 @@ if fig==1
     hold off;
     title('Normalized Amplitude Variance');
 end
-%end
+end
