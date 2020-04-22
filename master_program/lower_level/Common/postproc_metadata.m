@@ -3,23 +3,23 @@ function metadata = postproc_metadata()
 % Produces a struct containing meta-information about the current COVIS
 % software:  version strings, Git tags, etc.
 %
-%
 % Inputs: n/a
 %
 % Outputs:
 %   metadata: Output struct containing the fields:
 %      verstr:  Output from covis_version() function
-%      gitrev:  Hash for curre version of code
-%      gittags: Git tags for current revision of code (if any)
+%      matlab_version:         Output from matlab "version" function
+%      postprocessing_gitrev:  Git hash for this repo
+%      postprocessing_gittags: Git tags for this repo (if any)
 
 
   metadata = struct;
-  metadata.verstr = covis_version();
+  metadata.verstr = covis_version().version_string;
   metadata.matlab_version = version;
 
   % We can only query the Git metadata when running from the Git repo in Matlab
   % When compiled into Python code, we need to "bake" static values into
-  % the python lib.  See the "tmp/static_git_info.m" rule in "Deploy/makefile"
+  % the python lib.  See the "tmp/static_git_info.m" rule in "Deploy/Makefile"
 
   % Default values
   metadata.postprocessing_gitrev='';
@@ -37,7 +37,7 @@ function metadata = postproc_metadata()
     end
 
   else
-    % If not a git repo, use static values
+    % If not running from within Matlab, expect static values to be included
     gitinfo = static_git_info();
 
     metadata.postprocessing_gitrev = gitinfo.gitrev;

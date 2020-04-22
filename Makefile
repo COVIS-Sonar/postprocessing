@@ -1,8 +1,8 @@
 help:
 	@echo "make unittest (or make test)        Runs Matlab-based unit test suite (from command line) -- runs quickly"
 	@echo "make integrationtest                Runs Matlab-based integration test suite (from command line) -- may run slowly"
-	@echo "make deps													 Install necessary dependencies to ThirdParty/"
-	@echo "make testdata  										 Run \'make download\" in TestData/"
+	@echo "make deps                           Install necessary dependencies to ThirdParty/"
+	@echo "make testdata                       Run 'make download' in TestData/"
 
 
 process:
@@ -19,6 +19,7 @@ COMMA := ,
 
 
 unittest: covis_test_data
+	## postproc_metadata test assumes this tag has been set!
 	git tag -f test
 	cd Test/Unit/ && matlab -nodisplay -nosplash -r "  addpath('..',${subst $(SPACE),$(COMMA),$(patsubst %,'%',$(ALL_MATLAB_PATHS))}); result = runtests(); disp(result); exit()"
 

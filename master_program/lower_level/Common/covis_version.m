@@ -1,7 +1,11 @@
-function verstr = covis_version()
+function version_data = covis_version()
 %
 % Returns a string describing the current version of the COVIS post-
 % processing code.  Also useful as a test function.
 %
 
-    verstr = 'COVIS Post-processing v2.0.1';
+    version_data = struct;
+    version_data.version_number = "2.1.1";
+    version_data.version_string = strcat('COVIS Post-processing v', version_data.version_number);
+
+    version_data;
