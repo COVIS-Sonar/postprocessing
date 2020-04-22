@@ -46,9 +46,6 @@ depth =1544; % depth ( m )
 p = gsw_p_from_z(-depth,lat);
 c = gsw_sound_speed_t_exact(S,T,p); % sound speed ( m/s )
 
-% maximum number of bad pings allowed
-max_bad_ping_count = 2;
-
 % mask parameters
 noise_floor = 0.64; % rms noise floor (uncalibrated in machine units)
 snr_thresh = 45; % snr threshold ( dB )
@@ -280,9 +277,7 @@ for np = 1:nping
     end
     data(:,:,np) = data1;
 end   % End loop on pings
-if bad_ping_count>max_bad_ping_count
-    error('number of bad pings (%d) exceeds the threshold (%d)\n',bad_ping_count,max_bad_ping_count);
-end
+
 
 % Loop again on pings to calculate backscatter intensity and
 % scintillation parameters
