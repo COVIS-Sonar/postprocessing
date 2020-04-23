@@ -267,7 +267,7 @@ for nb = 1:nbursts
             continue
         end
 
-        if isempty(data)
+        if isempty(data) || size(data,2)~=256
             fprintf('Warning: error reading ping %d at pitch %f\n',ping_num, burst(nb).pitch);
             bad_ping_count = bad_ping_count + 1;
             bad_ping(bad_ping_count) = ping_num;
@@ -392,7 +392,8 @@ grd_out.v(grd_out.v==0) = nan;
 
 
 % save local copies of covis structs
-covis.release = covis_version().version_number;
+covis_vers = covis_version();
+covis.release = covis_vers.version_number;
 covis.grid = grd_out;
 covis.sweep = swp;
 covis.ping = png;
