@@ -432,7 +432,8 @@ grd_out.Id_filt(n) = grd_out.Id_filt(n)./grd_out.w(n);
 grd_out.Kp(n) = grd_out.Kp(n)./grd_out.w(n);
 
 % save local copies of covis structs
-covis.release = covis_version().version_number;
+covis_vers = covis_version();
+covis.release = covis_vers.version_number;
 covis.sweep = swp;
 covis.grid = grd_out;
 covis.ping = png;

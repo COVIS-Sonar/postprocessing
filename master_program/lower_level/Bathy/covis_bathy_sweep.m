@@ -392,7 +392,8 @@ grd_out.v(grd_out.v==0) = nan;
 
 
 % save local copies of covis structs
-covis.release = covis_version().version_number;
+covis_vers = covis_version();
+covis.release = covis_vers.version_number;
 covis.grid = grd_out;
 covis.sweep = swp;
 covis.ping = png;

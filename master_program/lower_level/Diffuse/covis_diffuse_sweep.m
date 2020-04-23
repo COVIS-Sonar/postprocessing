@@ -540,7 +540,8 @@ for k = 1:length(covis.grid)
 end
 
 % save metadata into the covis structure
-covis.release = covis_version().version_number;
+covis_vers = covis_version();
+covis.release = covis_vers.version_number;
 covis.sweep = swp;
 covis.ping = png;
 covis.sonar.position = pos;
