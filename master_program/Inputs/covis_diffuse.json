@@ -52,7 +52,7 @@
         "shape": "rectangular", 
         "units": {
            "spatial": "meters",
-           "value": "1/meters"
+           "value": "square meters"
         },
         "dimensions": 2,
         "bounds": {
@@ -68,7 +68,7 @@
         "shape": "rectangular", 
         "units": {
            "spatial": "meters",
-           "value": "1/meters"
+           "value": "none"
         },
         "dimensions": 2,
         "bounds": {
@@ -84,7 +84,7 @@
         "shape": "rectangular", 
         "units": {
            "spatial": "meters",
-           "value": "db"
+           "value": "square meters"
         },
         "dimensions": 2,
         "bounds": {
