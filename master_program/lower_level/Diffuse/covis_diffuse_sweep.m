@@ -46,18 +46,6 @@ depth =1544; % depth ( m )
 p = gsw_p_from_z(-depth,lat);
 c = gsw_sound_speed_t_exact(S,T,p); % sound speed ( m/s )
 
-% mask parameters
-noise_floor = 0.64; % rms noise floor (uncalibrated in machine units)
-snr_thresh = 45; % snr threshold ( dB )
-
-
-% correlation time lag (sec)
-tlag = 2;
-
-% averaging window length (sec)
-avg_win = 4;
-
-
 
 % bathymetry data directory
 swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
@@ -71,8 +59,6 @@ end
 bathy = load(find_input_file(bathy_file));
 
 
-
-
 % full path to sweep
 swp_dir = fullfile(swp_path, swp_name);
 
@@ -80,7 +66,6 @@ swp_dir = fullfile(swp_path, swp_name);
 if(~exist(swp_dir,'dir'))
     error('Sweep directory %s does not exist\n',swp_dir);
 end
-
 
 % parse sweep.json file in data archive
 swp_file = 'sweep.json';
@@ -121,10 +106,12 @@ end
 
 % set local copies of covis structs
 pos = covis.sonar.position;
+noise = covis.processing.noise;
 bfm = covis.processing.beamformer;
 cal = covis.processing.calibrate;
 filt = covis.processing.filter;
 cor = covis.processing.correlation;
+avg = covis.processing.averaging;
 
 % Set the type of beamforming (fast, fft, ...)
 if(~isfield(bfm,'type'))
@@ -143,6 +130,8 @@ end
 if(~isfield(cal,'mode'))
     cal.mode = 'TS-Wide'; % 'VSS', 'TS-Wide', 'TS-Fan'
 end
+
+% filter parameters
 if(~isfield(cal,'filt'))
     cal.filt = 1;         % 1 for low-pass filtering, 0 for no filtering
     cal.filt_bw = 2.0;     % Bandwdith is filt_bw/tau
@@ -161,10 +150,33 @@ window_size = cor.window_size;
 
 % correlation window overlap [number of samples]
 if(~isfield(cor,'window_overlap'))
-    cor.window_overlap = 0.4;
+    cor.window_overlap = 0.5;
 end
 window_overlap = cor.window_overlap;
 
+% correlation time lag between pings
+if(~isfield(cor,'tlag'))
+    cor.tlag = 2;
+end
+tlag = cor.tlag;
+
+% averaging window size (sec)
+if(~isfield(avg,'avg_win'))
+    avg.avg_win = 4;
+end
+avg_win = avg.avg_win;
+
+% noise floor (in raw unit)
+if(~isfield(noise,'noise_floor'))
+    noise.noise_floor = 0.1970;
+end
+noise_floor = noise.noise_floor;
+
+% Signal-to-noise threshold (dB)
+if(~isfield(noise,'snr_thresh'))
+    noise.snr_thresh = 90;
+end
+snr_thresh = noise.snr_thresh;
 
 % directory list of *.bin file
 file = dir(fullfile(swp_dir, '*.bin'));
@@ -244,18 +256,18 @@ for np = 1:nping
         fprintf('Warning: binary file missing for ping:%d\n',ping_num)
         continue
     end
-
+    
     if (np == 1)
         if(Verbose > 1)
             png(np).hdr  % View essential parameters
         end
     end
-
+    
     if(Verbose > 1)
         fprintf('Reading %s: pitch %f, roll %f, yaw %f\n', bin_file, ...
             pitch*180/pi, roll*180/pi, yaw*180/pi);
     end
-
+    
     % read raw element quadrature data
     try
         [hdr, data1] = covis_read(fullfile(swp_dir, bin_file));
@@ -306,7 +318,7 @@ for np = 1:size(data,3)
     bfm.last_samp = hdr.last_samp + 1;
     bfm.start_angle = -64;
     bfm.end_angle = 64;
-
+    
     % Apply Filter to data
     try
         [data1, filt, png(np)] = covis_filter(data1, filt, png(np));
@@ -314,7 +326,7 @@ for np = 1:size(data,3)
         fprintf('Warning: error in filtering ping: %d\n',png(np).num)
         continue;
     end
-
+    
     % beamform the quadrature data
     try
         [bfm, bf_sig1] = covis_beamform(bfm, data1);
@@ -329,9 +341,9 @@ for np = 1:size(data,3)
         fprintf('Warning: error in calibrating ping: %d\n',png(np).num)
         continue;
     end
-
+    
     bf_sig_t(:,:,np) = bf_sig1;
-
+    
     % calculate scintillation index and log-amplitude flluctuations
     I1 = abs(bf_sig1).^2;
     Isq1 = abs(bf_sig1).^4;
@@ -359,12 +371,12 @@ ping_rate = png(1).hdr.max_ping_rate;
 bf_sig_t_sub = bf_sig_t(:,:,ii_ave);
 ping_sec_sub = ping_sec(ii_ave);
 for np = 1:size(bf_sig_t_sub,3)
-
-
+    
+    
     % get range and azimuthal angles
     range = bfm.range;
     azim = bfm.angle;
-
+    
     % calculate the target strength corresponding to the noise floor
     if np==1
         bf_sig1 = squeeze(bf_sig_t(:,:,np));
@@ -378,7 +390,7 @@ for np = 1:size(bf_sig_t_sub,3)
         E1_t = nan(size(I_t2));
         E2_t = nan(size(I_t2));
     end
-
+    
     t1 = png(np).sec;
     t2 = t1+tlag;
     if ~isempty(find(abs(ping_sec_sub-t2)<1/ping_rate,1))
@@ -386,11 +398,11 @@ for np = 1:size(bf_sig_t_sub,3)
     else
         continue
     end
-
+    
     % pair of pings used
     bf_sig1 = bf_sig_t_sub(:,:,np);
     bf_sig2 = bf_sig_t_sub(:,:,np2);
-
+    
     % Correlate pings
     %  rc is the range of the center of the corr bin
     try
@@ -400,7 +412,7 @@ for np = 1:size(bf_sig_t_sub,3)
         continue
     end
     I2 = sqrt(E1.*E2);
-
+    
     % save the quanities of interest
     cov_t(:,:,np) = cov;
     E1_t(:,:,np) = E1;
@@ -462,21 +474,21 @@ x_out2 = zeros(length(rc),length(azim));
 y_out2 = zeros(length(rc),length(azim));
 
 for j = 1:length(azim)
-
+    
     % receiver coordinates of a pseudo plane perpendicular along the beam
     azim1 = azim(j);
     xr = range(:)*cos(ver_beam)*sin(azim1);
     yr = range(:)*cos(ver_beam)*cos(azim1);
     zr = range(:)*sin(ver_beam);
     rr = [xr(:)';yr(:)';zr(:)'];
-
+    
     % real-world coordinates of a pseudo plane
     rw = M*rr;
-
+    
     xw1 = reshape(rw(1,:),length(range),length(ver_beam));
     yw1 = reshape(rw(2,:),length(range),length(ver_beam));
     zw1 = reshape(rw(3,:),length(range),length(ver_beam));
-
+    
     % Find the intercept of the pseudo plane on the seafloor
     zw2 = interp2(x_bathy,y_bathy,z_bathy,xw1,yw1,'linear',nan);
     dz = abs(zw1-zw2);
@@ -559,96 +571,56 @@ fclose('all');
 xg = covis.grid{1}.x;
 yg = covis.grid{1}.y;
 if fig==1
-    figure
-    pcolorjw(xg,yg,covis.grid{2}.v);
-    shading flat
-    axis image;
-    caxis([0 0.5]);
-    colormap('jet');
-    colorbar;
-    xlabel('Easting of COVIS ( m )');
-    ylabel('Northing of COVIS ( m )');
-    hold on;
-    plot(0,0,'.m','markersize',30);
-    hold off;
-    title('Decorrelation');
-
-
-    figure
-    pcolorjw(xg,yg,10*log10(covis.grid{3}.v));
-    shading flat
-    axis image;
-    caxis([-50,-15]);
-    colormap('jet');
-    h = colorbar;
-    title(h,'dB');
-    xlabel('Easting of COVIS ( m )');
-    ylabel('Northing of COVIS ( m )');
-    hold on;
-    plot(0,0,'.m','markersize',30);
-    hold off;
-    title('Target strength')
-
-    figure
-    pcolorjw(xg,yg,covis.grid{4}.v);
-    shading flat
-    axis image;
-    caxis([0,2]);
-    colormap('jet');
-    colorbar;
-    xlabel('Easting of COVIS ( m )');
-    ylabel('Northing of COVIS ( m )');
-    hold on;
-    plot(0,0,'.m','markersize',30);
-    hold off;
-    title('log-amp fluctuation')
-
-    figure
-    si = covis.grid{5}.v;
-    si(si==0) = nan;
-    pcolorjw(xg,yg,si);
-    shading flat
-    axis image;
-    caxis([0,1]);
-    colormap('jet');
-    colorbar;
-    xlabel('Easting of COVIS ( m )');
-    ylabel('Northing of COVIS ( m )');
-    hold on;
-    plot(0,0,'.m','markersize',30);
-    hold off;
-    title('Scintillation index');
-
-    figure
-    sp2 = covis.grid{6}.v;
-    sp2(sp2==0) = nan;
-    pcolorjw(xg,yg,sp2);
-    shading flat
-    axis image;
-    caxis([0,2]);
-    colormap('jet');
-    colorbar;
-    xlabel('Easting of COVIS ( m )');
-    ylabel('Northing of COVIS ( m )');
-    hold on;
-    plot(0,0,'.m','markersize',30);
-    hold off;
-    title('Normalized Phase Variance');
-
-    figure
-    kp = covis.grid{7}.v;
-    kp(kp==0) = nan;
-    pcolorjw(xg,yg,kp);
-    shading flat
-    axis image;
-    caxis([0,0.5]);
-    colormap('jet');
-    colorbar;
-    xlabel('Easting of COVIS ( m )');
-    ylabel('Northing of COVIS ( m )');
-    hold on;
-    plot(0,0,'.m','markersize',30);
-    hold off;
-    title('Normalized Amplitude Variance');
+    for k = 1:length(covis.grid)
+        grd = covis.grid{k};
+        switch grd.type
+            case 'intensity'
+                figure
+                grd.v(grd.v==0) = nan;
+                pcolorjw(xg,yg,10*log10(grd.v));
+                shading flat
+                axis image;
+                caxis([-50 -15]);
+                colormap('jet');
+                h = colorbar;
+                title(h,'dB');
+                xlabel('Easting of COVIS ( m )');
+                ylabel('Northing of COVIS ( m )');
+                hold on;
+                plot(0,0,'.m','markersize',30);
+                hold off;
+                title('TS');     
+            case 'decorrelation'
+                grd.v(grd.v==0) = nan;
+                figure
+                pcolorjw(xg,yg,grd.v);
+                shading flat
+                axis image;
+                caxis([0 0.5]);
+                colormap('jet');
+                h = colorbar;
+                xlabel('Easting of COVIS ( m )');
+                ylabel('Northing of COVIS ( m )');
+                hold on;
+                plot(0,0,'.m','markersize',30);
+                hold off;
+                title('decorrelation');
+            case 'Kp'
+                grd.v(grd.v==0) = nan;
+                figure
+                pcolorjw(xg,yg,grd.v);
+                shading flat
+                axis image;
+                caxis([0.05 0.25]);
+                colormap('jet');
+                h = colorbar;
+                xlabel('Easting of COVIS ( m )');
+                ylabel('Northing of COVIS ( m )');
+                hold on;
+                plot(0,0,'.m','markersize',30);
+                hold off;
+                title('Kp');
+        end
+    end
 end
 end
