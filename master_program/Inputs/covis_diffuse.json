@@ -23,6 +23,10 @@
     },
 
     "processing": {
+        "noise": {
+           "noise_floor": 0.64,
+           "snr_thresh": 45
+        },
         "beamformer": {
            "type": "fast"
         },
@@ -41,9 +45,11 @@
         "correlation": {
            "window_size": 0.001,
            "window_overlap": 0.5,
-           "windthresh": 0.001,
-           "nlag": 4
-    }
+           "tlag": 4
+         },
+         "averaging": {
+           "avg_win": 4
+         }
     },
 
     "grid": [
