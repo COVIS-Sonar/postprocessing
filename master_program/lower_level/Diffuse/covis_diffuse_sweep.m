@@ -46,14 +46,6 @@ depth =1544; % depth ( m )
 p = gsw_p_from_z(-depth,lat);
 c = gsw_sound_speed_t_exact(S,T,p); % sound speed ( m/s )
 
-% mask parameters
-noise_floor = 0.64; % rms noise floor (uncalibrated in machine units)
-snr_thresh = 45; % snr threshold ( dB )
-
-
-
-
-
 
 % bathymetry data directory
 swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
@@ -67,8 +59,6 @@ end
 bathy = load(find_input_file(bathy_file));
 
 
-
-
 % full path to sweep
 swp_dir = fullfile(swp_path, swp_name);
 
@@ -76,7 +66,6 @@ swp_dir = fullfile(swp_path, swp_name);
 if(~exist(swp_dir,'dir'))
     error('Sweep directory %s does not exist\n',swp_dir);
 end
-
 
 % parse sweep.json file in data archive
 swp_file = 'sweep.json';
@@ -117,10 +106,12 @@ end
 
 % set local copies of covis structs
 pos = covis.sonar.position;
+noise = covis.processing.noise;
 bfm = covis.processing.beamformer;
 cal = covis.processing.calibrate;
 filt = covis.processing.filter;
 cor = covis.processing.correlation;
+avg = covis.processing.averaging;
 
 % Set the type of beamforming (fast, fft, ...)
 if(~isfield(bfm,'type'))
@@ -159,10 +150,33 @@ window_size = cor.window_size;
 
 % correlation window overlap [number of samples]
 if(~isfield(cor,'window_overlap'))
-    cor.window_overlap = 0.4;
+    cor.window_overlap = 0.5;
 end
 window_overlap = cor.window_overlap;
 
+% correlation time lag between pings
+if(~isfield(cor,'tlag'))
+    cor.tlag = 2;
+end
+tlag = cor.tlag;
+
+% averaging window size (sec)
+if(~isfield(avg,'avg_win'))
+    avg.avg_win = 4;
+end
+avg_win = avg.avg_win;
+
+% noise floor (in raw unit)
+if(~isfield(noise,'noise_floor'))
+    noise.noise_floor = 0.1970;
+end
+noise_floor = noise.noise_floor;
+
+% Signal-to-noise threshold (dB)
+if(~isfield(noise,'snr_thresh'))
+    noise.snr_thresh = 90;
+end
+snr_thresh = noise.snr_thresh;
 
 % directory list of *.bin file
 file = dir(fullfile(swp_dir, '*.bin'));
