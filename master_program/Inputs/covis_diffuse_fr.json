@@ -1,0 +1,231 @@
+{
+    "type": "diffuse_fr",
+    "comments": "ASHES at Axial",
+
+    "user": {
+        "verbose": 1,
+        "debug": 0,
+        "view": {
+            "azimuth": 0.0,
+            "elevation": 0.0
+        },
+        "outpath": "nan"
+    },
+
+    "sonar": {
+        "position": {
+            "easting": 0.0,
+            "northing": 0.0,
+            "depth": -1500,
+            "altitude": 4.2,
+            "declination": 16.0
+        }
+    },
+
+    "processing": {
+        "noise": {
+           "noise_floor": 0.1970,
+           "snr_thresh": 90
+        },
+        "beamformer": {
+           "type": "fast"
+        },
+        "calibrate": {
+           "mode": "TS-Fan"
+        },
+        "filter": {
+           "status": "on",
+           "type": "butterworth",
+           "bw": 2,
+           "order": 4
+        },
+        "ping_combination": {
+           "mode": "nan"
+        },
+        "correlation": {
+           "window_size": 0.001,
+           "window_overlap": 0.5,
+           "tlag": 2
+         },
+         "averaging": {
+           "avg_win": 4
+         },
+        "bounds": {
+            "pitch": {
+                "start": -45,
+                "stop": 10
+            },
+            "heading": {
+                "start": 0,
+                "stop": 0
+            },
+            "range": {
+                "start": 0,
+                "stop": 0
+            }
+        }
+    },
+
+    "grid": [
+      {
+        "type": "bathy_filt", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "meters"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+      {
+        "type": "intensity_filt", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "square meters"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+      {
+        "type": "decorrelation intensity", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "square meters"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+      {
+        "type": "decorrelation", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "none"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+      {
+        "type": "bathy", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "meters"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+      {
+        "type": "intensity", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "square meters"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+      {
+        "type": "Chi_var", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "none"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+      {
+        "type": "SI", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "none"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+       {
+        "type": "Sig_phi2", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "none"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      },
+       {
+        "type": "Kp", 
+        "shape": "rectangular", 
+        "units": {
+           "spatial": "meters",
+           "value": "none"
+        },
+        "dimensions": 2,
+        "bounds": {
+            "xmin": -30, "xmax": 30,
+            "ymin": -30, "ymax": 30
+        },
+        "spacing": {
+            "dx": 0.5, "dy": 0.5
+        }
+      }
+    ]
+}
