@@ -51,11 +51,7 @@ noise_floor = 0.64; % rms noise floor (uncalibrated in machine units)
 snr_thresh = 45; % snr threshold ( dB )
 
 
-% correlation time lag (sec)
-tlag = 2;
 
-% averaging window length (sec)
-avg_win = 4;
 
 
 
@@ -143,6 +139,8 @@ end
 if(~isfield(cal,'mode'))
     cal.mode = 'TS-Wide'; % 'VSS', 'TS-Wide', 'TS-Fan'
 end
+
+% filter parameters
 if(~isfield(cal,'filt'))
     cal.filt = 1;         % 1 for low-pass filtering, 0 for no filtering
     cal.filt_bw = 2.0;     % Bandwdith is filt_bw/tau
