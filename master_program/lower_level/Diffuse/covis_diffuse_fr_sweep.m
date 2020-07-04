@@ -40,18 +40,6 @@ depth =1544; % depth ( m )
 p = gsw_p_from_z(-depth,lat);
 c = gsw_sound_speed_t_exact(S,T,p); % sound speed ( m/s )
 
-
-% % signal-to-noise (SNR) parameters
-% noise_floor = 0.1970; % rms noise floor
-% snr_thresh = 60+30; % SNR threshold (dB)
-%
-% % correlation time lag (sec)
-% tlag = 2;
-%
-% % averaging window length (sec)
-% avg_win = 4;
-
-
 % full path to sweep
 swp_dir = fullfile(swp_path, swp_name);
 
