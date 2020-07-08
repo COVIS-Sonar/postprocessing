@@ -21,8 +21,8 @@ function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
 %  and metadata
 
 % Example
-%  swp_path = 'C:\COVIS\Axial\COVIS_data\raw\raw_data_combine\2019\07\06';
-%  swp_name = 'COVIS-20190706T054420-imaging1';
+%  swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Imaging\2019\10';
+%  swp_name = 'COVIS-20191021T050002-imaging1';
 %  json_file = 0;
 %  fig = 1;
 
@@ -339,7 +339,10 @@ for nb = 1:nbursts
     % calculate SI
     Kp = nanmean(abs(bf_sig_out).^2,3)./nanmean(abs(bf_sig_out),3).^2-1;
 
-    
+    % ping average
+    average = nanmean(bf_sig_out,3);
+    bf_sig_a = abs(average);
+    bf_sig_d = sqrt(nanmean(abs(bf_sig_out-repmat(average,1,1,size(bf_sig_out,3))).^2,3)); % remove the average to enhance plume signals
 
     % calculate signal to noise ratio
     snr_a = 20*log10(abs(bf_sig_a)./noise_floor);
@@ -405,7 +408,7 @@ for nb = 1:nbursts
     Kp_out(:,:,nb) = Kp;
 end   % End loop over bursts
 
-% grid the ping data
+% grid the data
 grd_in.x = xv_out;
 grd_in.y = yv_out;
 grd_in.z = zv_out;
