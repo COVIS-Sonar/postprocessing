@@ -339,10 +339,7 @@ for nb = 1:nbursts
     % calculate SI
     Kp = nanmean(abs(bf_sig_out).^2,3)./nanmean(abs(bf_sig_out),3).^2-1;
 
-    % ping average
-    average = nanmean(bf_sig_out,3);
-    bf_sig_a = abs(average);
-    bf_sig_d = sqrt(nanmean(abs(bf_sig_out-repmat(average,1,1,size(bf_sig_out,3))).^2,3)); % remove the average to enhance plume signals
+    
 
     % calculate signal to noise ratio
     snr_a = 20*log10(abs(bf_sig_a)./noise_floor);
