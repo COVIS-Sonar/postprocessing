@@ -149,6 +149,7 @@ s = s1 - interp1(z0,s1,z_vent); % the top of the Inferno is at 4.75 m above the 
 % calculate the linear-fit to the centerline (least-square);
 
 [~,p,~] = best_fit_line(x0,y0,z0);
+p = -p;
 r=sqrt(p(1)^2+p(2)^2+p(3)^2);
 inc_ang_lin=acos(abs(p(3))/r)*180/pi;
 azimuth = atan2(p(2),p(1))*180/pi;
@@ -285,7 +286,7 @@ output.s = s;
 output.x = x;
 output.y = y;
 output.z = z;
-end
+
 
 
 
