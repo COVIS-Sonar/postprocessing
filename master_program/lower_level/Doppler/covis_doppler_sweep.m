@@ -17,9 +17,9 @@
 
 % Example
 swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Doppler';
-swp_name = 'COVIS-20191112T220002-doppler1';
+swp_name = 'COVIS-20191113T020002-doppler1';
 json_file = 0;
-fig = 1;
+
 
 
 %% Initialization
@@ -180,7 +180,11 @@ for n=1:size(csv,1)
     png(n).sen_pitch = csv(n,7);
     png(n).rot_roll = csv(n,5)/6;
     png(n).sen_roll = csv(n,8);
-    png(n).rot_yaw = csv(n,6)-central_yaw;
+    if csv(n,6) == 0
+        png(n).rot_yaw = 0;
+    else
+        png(n).rot_yaw = csv(n,6)-central_yaw;
+    end
     png(n).sen_head = csv(n,9);
     png(n).hdr = json.hdr;
 end
@@ -191,10 +195,8 @@ end
 
 
 % range of elev angles to process
-% elev_start = (covis.processing.bounds.pitch.start);
-% elev_stop = (covis.processing.bounds.pitch.stop);
-elev_start = 20;
-elev_stop = 21;
+elev_start = (covis.processing.bounds.pitch.start);
+elev_stop = (covis.processing.bounds.pitch.stop);
 
 %% Main program
 % loop over bursts
@@ -202,8 +204,6 @@ bad_ping = zeros(0);
 bad_ping_count = 0;
 nbursts = length(burst);
 burst_count = 0;
-
-
 for nb = 1:nbursts
     
     % check elevation
@@ -256,6 +256,13 @@ for nb = 1:nbursts
             continue
         end
         
+        if isempty(data) || size(data,2)~=256
+            fprintf('Warning: error reading ping %d at pitch %f\n',ping_num, burst(nb).pitch);
+            bad_ping_count = bad_ping_count + 1;
+            bad_ping(bad_ping_count) = ping_num;
+            continue;
+        end
+        
         ping_count = ping_count+1;
         if(ping_count == 1)
             monitor = data;
@@ -299,24 +306,18 @@ for nb = 1:nbursts
             bad_ping_count = bad_ping_count + 1;
             bad_ping(bad_ping_count) = ping_num;
             continue
-        end      
-        % calibrate signals
-        try
-            bf_sig_cal = covis_calibration(bf_sig, bfm, png(ip), cal,T, S, pH, lat,depth);
-        catch
-            fprintf('error in calibration at pitch %f\n',burst(nb).pitch);
-            continue
-        end      
-        bf_sig_out(:,:,np) = bf_sig_cal;
-        
-        % calibrate noise floor
-        if ping_count == 1
-            bf_sig_noise = noise_floor*ones(size(data));
-            bf_sig_noise = covis_calibration(bf_sig_noise,bfm,png(ip),cal,T,S,pH,lat,depth);
         end
+        % calibration
+        try
+            bf_sig = covis_calibration(bf_sig, bfm, png(n), cal,T, S, pH, lat,depth);
+        catch
+            fprintf('Warning: error in calibration at pitch %f\n',burst(nb).pitch);
+            continue
+        end
+            
+        bf_sig_out(:,:,np) = bf_sig;
     end
-        
-    
+      
     if all(isnan(bf_sig_out(:)))
         fprintf('no valid pings at pitch %f\n',burst(nb).pitch);
         continue
@@ -324,6 +325,14 @@ for nb = 1:nbursts
     
     burst_count = burst_count+1;
     if burst_count == 1
+        
+        xv_out1 = nan(size(bf_sig,1),size(bf_sig,2),nbursts);
+        yv_out1 = nan(size(xv_out1));
+        zv_out1 = nan(size(xv_out1));
+        Id_out1 = nan(size(xv_out1));
+        Id_filt_out1 = nan(size(xv_out1));
+        
+        
         cor = dsp.correlation;
         % correlation range window size [number of samples]
         if(~isfield(cor,'window_size'))
@@ -336,93 +345,114 @@ for nb = 1:nbursts
             cor.window_overlap = 0.5;
         end
         overlap = cor.window_overlap;
+        dsp.cor = cor;
         
         fsamp = png(ip).hdr.sample_rate;
         nwindow = round(window_size*fsamp);
         noverlap = round(overlap*nwindow);
         nbins=floor(size(bf_sig_out,1)/(nwindow-noverlap));
-        xv_out = nan(nbins,size(bf_sig_out,2),nbursts);
-        yv_out = nan(size(xv_out));
-        zv_out = nan(size(xv_out));
-        vr_cov_out = nan(size(xv_out));
-        vr_vel_out = nan(size(xv_out));
-        I_av_out = nan(size(xv_out));
-        vr_std_out = nan(size(xv_out));
-        I_std_out = nan(size(xv_out));
-        covar_out = nan(size(xv_out));
+        xv_out2 = nan(nbins,size(bf_sig_out,2),nbursts);
+        yv_out2 = nan(size(xv_out2));
+        zv_out2 = nan(size(xv_out2));
+        vr_cov_out = nan(size(xv_out2));
+        vr_vel_out = nan(size(xv_out2));
+        Id_out2 = nan(size(xv_out2));
+        Id_filt_out2 = nan(size(xv_out2));
+        vr_std_out = nan(size(xv_out2));
+        covar_out = nan(size(xv_out2));
     end
     
-    % mask out backscatter with low snr
-    bf_sig_noise = repmat(bf_sig_noise,1,1,size(bf_sig_out,3));
-    snr = 20*log10(abs(bf_sig_out)./abs(bf_sig_noise));
+
+    
+    % ping average
+    average = nanmean(bf_sig_out,3);
+    bf_sig_d = sqrt(nanmean(abs(bf_sig_out-repmat(average,1,1,size(bf_sig_out,3))).^2,3)); % remove the average to enhance plume signals
+    
+    
+    % signal-to-noise ratio
+    noise_sig = noise_floor*ones(size(bf_sig_d));
+    noise_sig = covis_calibration(noise_sig, bfm, png(n), cal,T, S, pH, lat,depth);
+    snr_d = 20*log10(abs(bf_sig_d)./noise_sig);
+     
+    % OSCFAR detection section
+    mag2 = bf_sig_d .* conj(bf_sig_d); % magnitude squared of the beamformed output
+    % determine the specified quantile at each range (time) step
+    clutter = prctile(mag2, clutterp, 2);
+    dBclutter = 10*log10(clutter) * ones(1,length(bfm.angle));
+    dBmag = 10*log10(mag2);
+    dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
+    indexD_d = dBSCR > scrthreshold; % detected samples
+    
+
+    
+    Id = abs(bf_sig_d).^2;
+    Id_filt = Id;
+    
+    % mask out data with low snr
+    Id_filt(snr_d<snr_thresh) = 10^-9;
+    Id_filt(~indexD_d) = 10^-9;
+    Id(snr_d<snr_thresh) = 10^-9;
+
     
     % Compute Doppler shift using all pings within the burst
     range = bfm.range;
-    [vr_cov,vr_vel,rc,I_av,vr_std,I_std,covar] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, bf_sig_out,'diff');
-    ang = bfm.angle;
-    xx = rc*sin(ang);
-    yy = rc*cos(ang);
-    figure
-    pcolorjw(xx,yy,10*log10(I_av));
-    axis image
-    figure
-    pcolorjw(xx,yy,vr_cov);
-    caxis([-0.1 0.1]);
-    axis image
-    
-    
-    
+    [vr_cov,vr_vel,rc,Id2,vr_std,covar] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, bf_sig_out);
+    Id_filt2 = Id2;
+        
     % calculate snr and mask out backscatter with low snr
-    [~,~,~,I_noise] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, bf_sig_noise,'ave');
-    snr = 10*log10(I_av./I_noise);
-%     I_av(snr<snr_thresh) = nan;
-%     vr_cov(snr<snr_thresh) = nan;
-%     vr_vel(snr<snr_thresh) = nan;
-%     vr_std(snr<snr_thresh) = nan;
-%     I_std(snr<snr_thresh) = nan;
-%     covar(snr<snr_thresh) = nan;
-    
-    
+    [~,~,~,I_noise] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, noise_sig);
+    snr_d2 = 10*log10(Id2./I_noise);
+
     % OSCFAR detection section
-%     mag2 = I_av;
-%     % determine the specified quantile at each range (time) step
-%     clutter = prctile(mag2, clutterp, 2);
-%     dBclutter = 10*log10(clutter) * ones(1,length(bfm.angle));
-%     dBmag = 10*log10(mag2);
-%     dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
-%     indexD_d = dBSCR > scrthreshold; % detected samples
-%   
-%     vr_cov(~indexD_d) = nan;
-%     vr_vel(~indexD_d) = nan;
-%     I_av(~indexD_d) = nan;
-%     vr_std(~indexD_d) = nan;
-%     I_std(~indexD_d) = nan;
-%     covar(~indexD_d) = nan;
+    mag2 = Id2; % magnitude squared of the beamformed output
+    % determine the specified quantile at each range (time) step
+    clutter = prctile(mag2, clutterp, 2);
+    dBclutter = 10*log10(clutter) * ones(1,length(bfm.angle));
+    dBmag = 10*log10(mag2);
+    dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
+    indexD_d2 = dBSCR > scrthreshold; % detected samples
+    
+    % mask out data with low snr
+    Id_filt2(snr_d2<snr_thresh) = 10^-9;
+    Id_filt2(~indexD_d2) = 10^-9;
+    Id2(snr_d2<snr_thresh) = 10^-9;
+    vr_cov(snr_d2<snr_thresh) = nan;
+    vr_vel(snr_d2<snr_thresh) = nan;
+    vr_std(snr_d2<snr_thresh) = nan;
+    covar(snr_d2<snr_thresh) = nan;
     
     % transform sonar coords into world coords
     azim = bfm.angle;
-    [xv, yv, zv] = covis_coords_darrell(origin, rc, azim, yaw, roll, pitch, central_head, pos.declination);
-    xv_out(:,:,nb) = xv;
-    yv_out(:,:,nb) = yv;
-    zv_out(:,:,nb) = zv;
+    [xv, yv, zv] = covis_coords_darrell(origin, range, azim, yaw, roll, pitch, central_head, pos.declination);
+    xv_out1(:,:,nb) = xv;
+    yv_out1(:,:,nb) = yv;
+    zv_out1(:,:,nb) = zv;
+    Id_out1(:,:,nb) = Id;
+    Id_filt_out1(:,:,nb) = Id_filt;
+    
+    [xv2, yv2, zv2] = covis_coords_darrell(origin, rc, azim, yaw, roll, pitch, central_head, pos.declination);
+    xv_out2(:,:,nb) = xv2;
+    yv_out2(:,:,nb) = yv2;
+    zv_out2(:,:,nb) = zv2;
+    Id_out2(:,:,nb) = Id2;
+    Id_filt_out2(:,:,nb) = Id_filt2;
     vr_cov_out(:,:,nb) = vr_cov;
     vr_vel_out(:,:,nb) = vr_vel;
-    I_av_out(:,:,nb) = I_av;
     vr_std_out(:,:,nb) = vr_std;
-    I_std_out(:,:,nb) = I_std;
     covar_out(:,:,nb) = covar;
 end   % End loop over bursts
 
-% grid the ping data
+
 % grid the data
-grd_in.x = xv_out;
-grd_in.y = yv_out;
-grd_in.z = zv_out;
+
 for n=1:length(covis.grid)
     grd_out = covis.grid{n};
     switch lower(grd_out.type)
         % grid the vertical velocity data
         case {'doppler velocity'}
+            grd_in.x = xv_out2;
+            grd_in.y = yv_out2;
+            grd_in.z = zv_out2;
             grd_in.vr_cov = vr_cov_out;
             grd_in.vr_vel = vr_vel_out;
             grd_in.std = vr_std_out;
@@ -430,8 +460,18 @@ for n=1:length(covis.grid)
             grd_out = l3grid_doppler(grd_in,grd_out);
             % grid the intensity data
         case {'intensity'}
-            grd_in.I = I_av_out;
-            grd_in.std = I_std_out;
+            grd_in.x = xv_out1;
+            grd_in.y = yv_out1;
+            grd_in.z = zv_out1;
+            grd_in.Id = Id_out1;
+            grd_in.Id_filt = Id_filt_out1;
+            grd_out = l3grid_doppler(grd_in,grd_out);          
+        case {'intensity_win'}
+            grd_in.x = xv_out2;
+            grd_in.y = yv_out2;
+            grd_in.z = zv_out2;
+            grd_in.Id = Id_out2;
+            grd_in.Id_filt = Id_filt_out2;
             grd_out = l3grid_doppler(grd_in,grd_out);
         otherwise
             error('No Doppler grid is found')
@@ -452,23 +492,32 @@ for n=1:length(covis.grid)
             covis.grid{n} = grd;
         case {'intensity'}
             m = find(grd.w);
-            grd.I(m) = grd.I(m)./grd.w(m);
-            grd.std(m)=grd.std(m)./grd.w(m);
+            grd.Id(m) = grd.Id(m)./grd.w(m);
+            grd.Id_filt(m)=grd.Id_filt(m)./grd.w(m);
+            covis.grid{n} = grd;  
+        case {'intensity_win'}
+            m = find(grd.w);
+            grd.Id(m) = grd.Id(m)./grd.w(m);
+            grd.Id_filt(m)=grd.Id_filt(m)./grd.w(m);
             covis.grid{n} = grd;
         otherwise
             error('No Doppler grid is found')
     end
 end
 
-
-
 % save local copies of covis structs
+covis_vers = covis_version();
+covis.release = covis_vers.version_number;
 covis.sweep = swp;
 covis.ping = png;
 covis.sonar.position = pos;
 covis.processing.beamformer = bfm;
 covis.processing.calibrate = cal;
 covis.processing.filter = filt;
+covis.processing.snr.noise_floor = noise_floor;
+covis.processing.snr.threshold = snr_thresh;
+covis.processing.oscfar.clutterp = clutterp;
+covis.processing.oscfar.scrthreshold = scrthreshold;
 covis.burst = burst;
 covis.bad_ping = bad_ping;
 

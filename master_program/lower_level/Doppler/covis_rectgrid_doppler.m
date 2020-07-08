@@ -49,9 +49,9 @@ if strcmp(grd.type,'doppler velocity')
     grd.std=zeros(size(grd.x)); % define an empty grid for line-of-sight velocity standard deviation
     grd.covar=zeros(size(grd.x)); % define an empty grid for the covariance function
     grd.w = zeros(size(grd.x)); % define an empty grid for weight function
-elseif strcmp(grd.type,'intensity')
-    grd.I = zeros(size(grd.x)); % define an empty grid for ping-averaged volume backscattering coefficient
-    grd.std = zeros(size(grd.x)); % define an empty grid for the standard deviation of volume backscattering coefficient
+elseif strcmp(grd.type,'intensity') || strcmp(grd.type,'intensity_win')
+    grd.Id = zeros(size(grd.x)); % define an empty grid for ping-differenced volume backscattering coefficient
+    grd.Id_filt = zeros(size(grd.x)); % define an empty grid for ping-differenced volume backscattering coefficient after OSCFAR filtering
     grd.w = zeros(size(grd.x)); % define an empty grid for weight function
 else
     error('No Doppler grid is found')

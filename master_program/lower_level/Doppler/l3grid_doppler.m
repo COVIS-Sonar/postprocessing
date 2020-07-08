@@ -52,6 +52,10 @@ if strcmp(grd_out.type,'doppler velocity')
     vr_vel = grd_in.vr_vel;
     std = grd_in.std;
     covar = grd_in.covar;
+    vr_cov(vr_cov==0) = nan;
+    vr_vel(vr_vel==0) = nan;
+    std(std==0) = nan;
+    covar(covar==0) = nan;
     ii=find(isfinite(vr_cov)&(x>=xmin)&(x<=xmax)&(y>=ymin)&(y<=ymax)&(z>=zmin)&(z<=zmax));
     if (~isempty(ii))
         x=x(ii);
@@ -84,16 +88,22 @@ if strcmp(grd_out.type,'doppler velocity')
             end
         end
     end
-elseif strcmp(grd_out.type,'intensity')
-    I = grd_in.I;
-    std = grd_in.std;
-    ii=find(isfinite(I)&(x>=xmin)&(x<=xmax)&(y>=ymin)&(y<=ymax)&(z>=zmin)&(z<=zmax));
+    grd_out.vr_cov(isnan(grd_out.vr_cov)) = 0;
+    grd_out.vr_vel(isnan(grd_out.vr_vel)) = 0;
+    grd_out.std(isnan(grd_out.std)) = 0;
+    grd_out.covar(isnan(grd_out.covar)) = 0;
+elseif strcmp(grd_out.type,'intensity') || strcmp(grd_out.type,'intensity_win')
+    Id = grd_in.Id;
+    Id_filt = grd_in.Id_filt;
+    Id(Id==10^-9) = nan;
+    Id_filt(Id==10^-9) = nan;
+    ii=find(isfinite(Id)&(x>=xmin)&(x<=xmax)&(y>=ymin)&(y<=ymax)&(z>=zmin)&(z<=zmax));
     if (~isempty(ii))
         x=x(ii);
         y=y(ii);
         z=z(ii);
-        I=I(ii);
-        std = std(ii);
+        Id=Id(ii);
+        Id_filt = Id_filt(ii);
         i(:,1)=floor((x(:)-xmin)/dx)+1;
         i(:,2)=ceil((x(:)-xmin)/dx)+1;
         j(:,1)=floor((y(:)-ymin)/dy)+1;
@@ -108,13 +118,15 @@ elseif strcmp(grd_out.type,'intensity')
                     wz=1-abs(zg(k(:,l))-z(:))/dz;
                     w=sqrt(wx.^2+wy.^2+wz.^2);
                     p=sub2ind([Ny,Nx,Nz],j(:,m),i(:,n),k(:,l));
-                    grd_out.I(p)=grd_out.I(p)+w.*I(:); % ping-averaged volume backscattering coefficient
-                    grd_out.std(p)=grd_out.std(p)+w.*std(:); % standard deviation of volume backscattering coefficient
+                    grd_out.Id(p)=grd_out.Id(p)+w.*Id(:); % ping-averaged volume backscattering coefficient
+                    grd_out.Id_filt(p)=grd_out.Id_filt(p)+w.*Id_filt(:); % standard deviation of volume backscattering coefficient
                     grd_out.w(p)=grd_out.w(p)+w; % weight function
                 end
             end
         end
     end
+    grd_out.Id(isnan(grd_out.Id)) = 10^-9;
+    grd_out.Id_filt(isnan(grd_out.Id_filt)) = 10^-9;
 else
     error('No Doppler grid is found')
 end

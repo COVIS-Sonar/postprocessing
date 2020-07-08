@@ -1,4 +1,4 @@
-function [beta,rnew,J] = nlinfit_xgy(X,y,model,beta0)
+function [beta,rnew,J,flag] = nlinfit_xgy(X,y,model,beta0,fac)
 %NLINFIT Nonlinear least-squares data fitting by the Gauss-Newton method.
 %   NLINFIT(X,Y,'MODEL',BETA0) finds the coefficients of the nonlinear
 %   function described in MODEL. MODEL is a user supplied function having
@@ -13,6 +13,10 @@ function [beta,rnew,J] = nlinfit_xgy(X,y,model,beta0)
 %   $Revision: 2.12 $  $Date: 1998/09/09 19:39:39 $
 %   $Revision: the name is changed to nlin_fit_xgy by xgy to separate from 
 %              nlinfit in the matlab toolbox. $Date: Jan 27, 2013 
+
+ii = find(~isnan(y));
+y = y(ii);
+X = X(ii,:);
 
 
 n = length(y);
@@ -31,10 +35,10 @@ beta0 = beta0(:);
 J = zeros(n,p);
 beta = beta0;
 betanew = beta + 1;
-maxiter = 10000;
+maxiter = 100;
 iter = 0;
-betatol = 1.0E-4;
-rtol = 1.0E-4;
+betatol = 1.0E-9;
+rtol = 1.0E-9;
 sse = 1;
 sseold = sse;
 seps = sqrt(eps);
@@ -42,7 +46,7 @@ zbeta = zeros(size(beta));
 s10 = sqrt(10);
 eyep = eye(p);
 zerosp = zeros(p,1);
-
+flag = 0;
 while (norm((betanew-beta)./(beta+seps)) > betatol || abs(sseold-sse)/(sse+seps)> rtol) && iter < maxiter    
    if iter > 0
       beta = betanew; 
@@ -50,17 +54,17 @@ while (norm((betanew-beta)./(beta+seps)) > betatol || abs(sseold-sse)/(sse+seps)
 
 
    iter = iter + 1;
-   yfit = feval(model,beta,X);
+   yfit = feval(model,beta,X,fac);
    r = y - yfit;
    sseold = r'*r;
 
-   for k = 1:p,
+   for k = 1:p
       delta = zbeta;
       delta(k) = seps*beta(k);
       if delta(k) == 0
           delta(k) = sqrt(eps);
       end
-      yplus = feval(model,beta+delta,X);
+      yplus = feval(model,beta+delta,X,fac);
       J(:,k) = (yplus - yfit)/delta(k);
    end
 
@@ -73,24 +77,26 @@ while (norm((betanew-beta)./(beta+seps)) > betatol || abs(sseold-sse)/(sse+seps)
    step = Jplus\rplus;
    
    betanew = beta + step;
-   yfitnew = feval(model,betanew,X);
+   yfitnew = feval(model,betanew,X,fac);
    rnew = y - yfitnew;
    sse = rnew'*rnew;
    iter1 = 0;
    while sse > sseold && iter1 < 12
       step = step/s10;
       betanew = beta + step;
-      yfitnew = feval(model,betanew,X);
+      yfitnew = feval(model,betanew,X,fac);
       rnew = y - yfitnew;
       sse = rnew'*rnew;
       iter1 = iter1 + 1;
    end
+
 %    if betanew(1)+betanew(3)<0
 %        disp('terminating nlinfit to avoid negative centerline velocity');
 %        break
 %    end
 end
 if iter == maxiter
+   flag = 1;
    disp('NLINFIT did NOT converge. Returning results from last iteration.');
 end
 end

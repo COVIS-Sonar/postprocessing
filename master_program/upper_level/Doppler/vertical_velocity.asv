@@ -33,14 +33,25 @@ thetaci = angle(covar);
 vr = 100*c*fs/(4*pi*fc)*thetaci;
 
 % extract plume centerline properties
-xs = -13.27; % x-coordinate of Inferno (m) (2019)
-ys = -0.77; % y-coordinate of Inferno (m) (2019)
-Ri = 4; % inner radius (m)
-Ro = 8; % outer radius (m)
-diagnosis = 0; % diagnosis toggle
-grd = covis.grid{3};
-doppler_I = get_plume_centerline_properties_fun(grd,xs,ys,Ri,Ro,diagnosis);
+Ig = covis.grid{3}.Id;
+center = get_plume_centerline_properties_fun(covis,Ig,xs,ys,Ri,Ro,diagnosis);
 
+% set the vertical range
+zmin=10;
+zmax=60;
+space=covis.grid{2}.spacing;
+range=covis.grid{2}.axis;
+zs=range(5):space.dz:range(6);
+iz_min=find(zs==zmin);
+iz_max=find(zs==zmax);
+iz_slice_min = find(zs == z_slice_min);
+iz_slice_max = find(zs == z_slice_max);
+Ig = covis.grid{2}.v; % volume backscatter cross-section from the output
+nping = [covis.burst(1:end).npings];
+nburst = length(nping); % number of bursts in the sweep
+nping = median(nping); % number of pings in each burst
+% locating the centerline of the plume
+[doppler_I]=doppler_intensity(covis,Ig,zmin,zmax,[-35,-20]); 
 % coordiantes of the centerline
 x0=doppler_I.x0(:,2);
 y0=doppler_I.y0(:,2);
