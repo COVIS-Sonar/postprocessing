@@ -4,7 +4,7 @@
 % on each cross-section to calculate those properties for the plume above
 % Inferno.
 
-function center = get_plume_centerline_properties_fun(grd,xs,ys,Ri,Ro,diagnosis)
+% function center = get_plume_centerline_properties_fun(grd,xs,ys,Ri,Ro,diagnosis)
 % Input:
 % grd: gridded data
 % xs: x-coordinate of sourve vent (e.g., Inferno) (m)
@@ -209,7 +209,7 @@ center.SSDev = SSDev_out;
 center.SST = SST_out;
 center.Npts = Npts_out;
 center.Flag = Flag_out;
-end
+%end
 
 
 

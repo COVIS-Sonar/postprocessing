@@ -12,7 +12,7 @@ function [m,p,s] = best_fit_line(x,y,z);
 % RAS - March 14, 2005
 
 [n,mx] = size(x); [ny,my] = size(y); [nz,mz] = size(z);
-if (mx~=1)|(my~=1)|(mz~=1)|(ny~=n)|(nz~=n)
+if (mx~=1)||(my~=1)||(mz~=1)||(ny~=n)||(nz~=n)
  error('The arguments must be column vectors of the same length.')
 end
 m = [mean(x),mean(y),mean(z)];
