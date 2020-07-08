@@ -277,8 +277,6 @@ for nb = 1:nbursts
         if(ping_count == 1)
             monitor = data;
             bf_sig_out = nan(size(data,1),size(data,2),npings);
-            I_out = nan(size(bf_sig_out));
-            Isq_out = nan(size(bf_sig_out));
         end
 
         % Correct phase using first ping as reference
@@ -320,8 +318,6 @@ for nb = 1:nbursts
             continue
         end
         bf_sig_out(:,:,np) = bf_sig;
-        I_out(:,:,np) = abs(bf_sig).^2;
-        Isq_out(:,:,np) = abs(bf_sig).^4;
     end
     if all(isnan(bf_sig_out(:)))
         fprintf('Warning: no valid pings at pitch %f\n',burst(nb).pitch);
