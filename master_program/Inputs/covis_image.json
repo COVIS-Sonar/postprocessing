@@ -43,8 +43,8 @@
         },
         "bounds": {
             "pitch": {
-                "start": -20,
-                "stop": 62
+                "start": -10,
+                "stop": 55
             },
             "heading": {
                 "start": 0,
@@ -67,7 +67,9 @@
         "dimensions": 3,
         "bounds": {
             "xmin": -40, "xmax": 20,
-            "ymin": -40, "ymax": 20, "zmin": 0, "zmax": 20},
+            "ymin": -40, "ymax": 20, 
+            "zmin": 0, "zmax": 20
+        },
         "spacing": {
             "dx": 0.25, "dy": 0.25, "dz": 0.25        }
     }
