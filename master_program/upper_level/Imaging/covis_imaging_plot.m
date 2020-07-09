@@ -16,15 +16,22 @@ function covis_imaging_plot(covis)
 %  a 3D acoustic plume image
 
 
+% set up constant parameters
+threshold = 3; % threshold for differentiating plumes and structures (dB)
 
 
-%% main program
+% load data and grid
 swp_name = covis.sweep.name;
 swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
 xg = covis.grid.x;
 yg = covis.grid.y;
 zg = covis.grid.z;
-vg = covis.grid.Id_filt;
+vg_a = covis.grid.Ia;
+vg_d = covis.grid.Id;
+dvg = vg_d./vg_a;
+vg = vg_d;
+vg(10*log10(dvg)<threshold) = 10^-9;
+
 
 
 
@@ -47,7 +54,7 @@ zb(rb<4) = nan;
 
 
 % plot 3D image
-figure(1)
+figure
 % add bathy
 pbathy=surf(xb,yb,zb);
 axis image;
