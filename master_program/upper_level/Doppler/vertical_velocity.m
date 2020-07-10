@@ -2,7 +2,7 @@
 % radial velocity component through the geometric conversion described in
 % Jackson et al., 2003
 
-function output = vertical_velocity(covis,z_fit_min,z_fit_max,z_vent)
+function output = vertical_velocity(covis,z_fit_min,z_fit_max)
 % Intput:
 % covis: output structure array from the lower-level processing of the
 %        Doppler-mode data
@@ -35,12 +35,8 @@ xg = squeeze(covis.grid{1}.x(1,:,1));
 yg = squeeze(covis.grid{1}.y(:,1,1));
 
 % calculate radial velocity from gridded covariance function
-covar = covis.grid{1}.covar;
-fs = covis.processing.beamformer.fs; % sampling rate (Hz);
-c = covis.processing.beamformer.c; % sound speed (m/s);
-fc = covis.processing.beamformer.fc; % central frequency (Hz);
-thetaci = angle(covar);
-vr = 100*c*fs/(4*pi*fc)*thetaci;
+vr = covis.grid{1}.vr_cov;
+
 
 % extract plume centerline properties
 xs = -13.27; % x-coordinate of Inferno (m) (2019)
@@ -134,17 +130,13 @@ ecerc=dxdt.*xx+dydt.*yy+dzdt.*zz;
 F = @(t)sqrt((2*p1(1)*t+p1(2)).^2+(2*p2(1)*t+p2(2)).^2+(2*p3(1)*t+p3(2)).^2); 
 % cubic fit
 %F =@(t)sqrt((3*p1(1)*t.^2+2*p1(2)*t+p1(3)).^2+(3*p2(1)*t.^2+2*p2(2)*t+p2(3)).^2+(3*p3(1)*t.^2+2*p3(2)*t+p3(3)).^2);
-s1=zeros(1,length(z0));
-s1(1)=0;
+s=zeros(1,length(z0));
+s(1)=0;
 for i=2:length(z0)
-s1(i) = integral(F,t(1),t(i));
+s(i) = integral(F,t(1),t(i));
 end
 
-% correct the centerline distance by subtracting the distance between COVIS
-% and the top of the North Tower of Grotto, which is assumed to be 19 m
-% above COVIS
 
-s = s1 - interp1(z0,s1,z_vent); % the top of the Inferno is at 4.75 m above the bottom of COVIS
 
 % calculate the linear-fit to the centerline (least-square);
 
@@ -269,15 +261,19 @@ end
 cd_I(isnan(cd_I))=0;
 
 % save results into a structure
-
+output.iz = [iz1:iz2];
 output.inc_ang_lin = inc_ang_lin;
 output.azimuth = azimuth;
+output.angles = angles;
+output.ecerc = ecerc;
 output.corr_ori = corr_ori;
 output.corr_filt = corr_filt;
 output.corr_fit = corr_fit;
+output.I = grd.Id;
 output.cd_I = cd_I;
 output.v_h = v_h;
 output.vc = vc;
+output.vrc = vrc;
 output.vz = vz;
 output.vz_std = vz_std;
 output.vr = vr;

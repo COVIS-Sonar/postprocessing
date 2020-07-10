@@ -93,16 +93,22 @@ if strcmp(grd_out.type,'doppler velocity')
     grd_out.std(isnan(grd_out.std)) = 0;
     grd_out.covar(isnan(grd_out.covar)) = 0;
 elseif strcmp(grd_out.type,'intensity') || strcmp(grd_out.type,'intensity_win')
+    Ia = grd_in.Ia;
     Id = grd_in.Id;
+    Ia_filt = grd_in.Ia_filt;
     Id_filt = grd_in.Id_filt;
+    Ia(Ia==10^-9) = nan;
+    Ia_filt(Ia==10^-9) = nan;
     Id(Id==10^-9) = nan;
     Id_filt(Id==10^-9) = nan;
-    ii=find(isfinite(Id)&(x>=xmin)&(x<=xmax)&(y>=ymin)&(y<=ymax)&(z>=zmin)&(z<=zmax));
+    ii=find(isfinite(Id)&isfinite(Ia)&(x>=xmin)&(x<=xmax)&(y>=ymin)&(y<=ymax)&(z>=zmin)&(z<=zmax));
     if (~isempty(ii))
         x=x(ii);
         y=y(ii);
         z=z(ii);
+        Ia=Ia(ii);
         Id=Id(ii);
+        Ia_filt = Ia_filt(ii);
         Id_filt = Id_filt(ii);
         i(:,1)=floor((x(:)-xmin)/dx)+1;
         i(:,2)=ceil((x(:)-xmin)/dx)+1;
@@ -118,13 +124,17 @@ elseif strcmp(grd_out.type,'intensity') || strcmp(grd_out.type,'intensity_win')
                     wz=1-abs(zg(k(:,l))-z(:))/dz;
                     w=sqrt(wx.^2+wy.^2+wz.^2);
                     p=sub2ind([Ny,Nx,Nz],j(:,m),i(:,n),k(:,l));
-                    grd_out.Id(p)=grd_out.Id(p)+w.*Id(:); % ping-averaged volume backscattering coefficient
-                    grd_out.Id_filt(p)=grd_out.Id_filt(p)+w.*Id_filt(:); % standard deviation of volume backscattering coefficient
+                    grd_out.Ia(p)=grd_out.Ia(p)+w.*Ia(:); % ping-averaged volume backscattering coefficient
+                    grd_out.Ia_filt(p)=grd_out.Ia_filt(p)+w.*Ia_filt(:); % ping-averaged volume backscattering coefficient with OSCFAR filtering
+                    grd_out.Id(p)=grd_out.Id(p)+w.*Id(:); % ping-differenced volume backscattering coefficient
+                    grd_out.Id_filt(p)=grd_out.Id_filt(p)+w.*Id_filt(:); % ping-differenced volume backscattering coefficient with OSCFAR filtering
                     grd_out.w(p)=grd_out.w(p)+w; % weight function
                 end
             end
         end
     end
+    grd_out.Ia(isnan(grd_out.Ia)) = 10^-9;
+    grd_out.Ia_filt(isnan(grd_out.Ia_filt)) = 10^-9;
     grd_out.Id(isnan(grd_out.Id)) = 10^-9;
     grd_out.Id_filt(isnan(grd_out.Id_filt)) = 10^-9;
 else

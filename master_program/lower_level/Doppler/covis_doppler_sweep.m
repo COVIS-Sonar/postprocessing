@@ -329,6 +329,8 @@ for nb = 1:nbursts
         xv_out1 = nan(size(bf_sig,1),size(bf_sig,2),nbursts);
         yv_out1 = nan(size(xv_out1));
         zv_out1 = nan(size(xv_out1));
+        Ia_out1 = nan(size(xv_out1));
+        Ia_filt_out1 = nan(size(xv_out1));
         Id_out1 = nan(size(xv_out1));
         Id_filt_out1 = nan(size(xv_out1));
         
@@ -356,6 +358,8 @@ for nb = 1:nbursts
         zv_out2 = nan(size(xv_out2));
         vr_cov_out = nan(size(xv_out2));
         vr_vel_out = nan(size(xv_out2));
+        Ia_out2 = nan(size(xv_out2));
+        Ia_filt_out2 = nan(size(xv_out2));
         Id_out2 = nan(size(xv_out2));
         Id_filt_out2 = nan(size(xv_out2));
         vr_std_out = nan(size(xv_out2));
@@ -366,15 +370,26 @@ for nb = 1:nbursts
     
     % ping average
     average = nanmean(bf_sig_out,3);
-    bf_sig_d = sqrt(nanmean(abs(bf_sig_out-repmat(average,1,1,size(bf_sig_out,3))).^2,3)); % remove the average to enhance plume signals
+    bf_sig_a = abs(average);
+    bf_sig_d = sqrt(nanmean(abs(bf_sig_out-repmat(bf_sig_a,1,1,size(bf_sig_out,3))).^2,3)); % remove the average to enhance plume signals
     
     
     % signal-to-noise ratio
     noise_sig = noise_floor*ones(size(bf_sig_d));
     noise_sig = covis_calibration(noise_sig, bfm, png(n), cal,T, S, pH, lat,depth);
+    snr_a = 20*log10(abs(bf_sig_a)./noise_sig);
     snr_d = 20*log10(abs(bf_sig_d)./noise_sig);
+
      
     % OSCFAR detection section
+    mag2 = bf_sig_a .* conj(bf_sig_a); % magnitude squared of the beamformed output
+    % determine the specified quantile at each range (time) step
+    clutter = prctile(mag2, clutterp, 2);
+    dBclutter = 10*log10(clutter) * ones(1,length(bfm.angle));
+    dBmag = 10*log10(mag2);
+    dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
+    indexD_a = dBSCR > scrthreshold; % detected samples
+    
     mag2 = bf_sig_d .* conj(bf_sig_d); % magnitude squared of the beamformed output
     % determine the specified quantile at each range (time) step
     clutter = prctile(mag2, clutterp, 2);
@@ -383,12 +398,15 @@ for nb = 1:nbursts
     dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
     indexD_d = dBSCR > scrthreshold; % detected samples
     
-
-    
+    Ia = abs(bf_sig_a).^2;
+    Ia_filt = Ia;    
     Id = abs(bf_sig_d).^2;
     Id_filt = Id;
     
     % mask out data with low snr
+    Ia_filt(snr_a<snr_thresh) = 10^-9;
+    Ia_filt(~indexD_a) = 10^-9;
+    Ia(snr_a<snr_thresh) = 10^-9;
     Id_filt(snr_d<snr_thresh) = 10^-9;
     Id_filt(~indexD_d) = 10^-9;
     Id(snr_d<snr_thresh) = 10^-9;
@@ -396,14 +414,24 @@ for nb = 1:nbursts
     
     % Compute Doppler shift using all pings within the burst
     range = bfm.range;
-    [vr_cov,vr_vel,rc,Id2,vr_std,covar] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, bf_sig_out);
+    [vr_cov,vr_vel,vr_std,Ia2,Id2,covar,rc] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, bf_sig_out);
+    Ia_filt2 = Ia2;
     Id_filt2 = Id2;
         
     % calculate snr and mask out backscatter with low snr
     [~,~,~,I_noise] = covis_incoher_dop_xgy(png(ip).hdr, dsp, range, noise_sig);
+    snr_a2 = 10*log10(Ia2./I_noise);
     snr_d2 = 10*log10(Id2./I_noise);
 
     % OSCFAR detection section
+    mag2 = Ia2; % magnitude squared of the beamformed output
+    % determine the specified quantile at each range (time) step
+    clutter = prctile(mag2, clutterp, 2);
+    dBclutter = 10*log10(clutter) * ones(1,length(bfm.angle));
+    dBmag = 10*log10(mag2);
+    dBSCR = dBmag - dBclutter; % signal to clutter ratio (SCR)
+    indexD_a2 = dBSCR > scrthreshold; % detected samples
+    
     mag2 = Id2; % magnitude squared of the beamformed output
     % determine the specified quantile at each range (time) step
     clutter = prctile(mag2, clutterp, 2);
@@ -413,6 +441,9 @@ for nb = 1:nbursts
     indexD_d2 = dBSCR > scrthreshold; % detected samples
     
     % mask out data with low snr
+    Ia_filt2(snr_a2<snr_thresh) = 10^-9;
+    Ia_filt2(~indexD_a2) = 10^-9;
+    Ia2(snr_a2<snr_thresh) = 10^-9;
     Id_filt2(snr_d2<snr_thresh) = 10^-9;
     Id_filt2(~indexD_d2) = 10^-9;
     Id2(snr_d2<snr_thresh) = 10^-9;
@@ -427,6 +458,8 @@ for nb = 1:nbursts
     xv_out1(:,:,nb) = xv;
     yv_out1(:,:,nb) = yv;
     zv_out1(:,:,nb) = zv;
+    Ia_out1(:,:,nb) = Ia;
+    Ia_filt_out1(:,:,nb) = Ia_filt;
     Id_out1(:,:,nb) = Id;
     Id_filt_out1(:,:,nb) = Id_filt;
     
@@ -434,6 +467,8 @@ for nb = 1:nbursts
     xv_out2(:,:,nb) = xv2;
     yv_out2(:,:,nb) = yv2;
     zv_out2(:,:,nb) = zv2;
+    Ia_out2(:,:,nb) = Ia2;
+    Ia_filt_out2(:,:,nb) = Ia_filt2;
     Id_out2(:,:,nb) = Id2;
     Id_filt_out2(:,:,nb) = Id_filt2;
     vr_cov_out(:,:,nb) = vr_cov;
@@ -463,6 +498,8 @@ for n=1:length(covis.grid)
             grd_in.x = xv_out1;
             grd_in.y = yv_out1;
             grd_in.z = zv_out1;
+            grd_in.Ia = Ia_out1;
+            grd_in.Ia_filt = Ia_filt_out1;
             grd_in.Id = Id_out1;
             grd_in.Id_filt = Id_filt_out1;
             grd_out = l3grid_doppler(grd_in,grd_out);          
@@ -470,6 +507,8 @@ for n=1:length(covis.grid)
             grd_in.x = xv_out2;
             grd_in.y = yv_out2;
             grd_in.z = zv_out2;
+            grd_in.Ia = Ia_out2;
+            grd_in.Ia_filt = Ia_filt_out2;
             grd_in.Id = Id_out2;
             grd_in.Id_filt = Id_filt_out2;
             grd_out = l3grid_doppler(grd_in,grd_out);
@@ -492,11 +531,15 @@ for n=1:length(covis.grid)
             covis.grid{n} = grd;
         case {'intensity'}
             m = find(grd.w);
+            grd.Ia(m) = grd.Ia(m)./grd.w(m);
+            grd.Ia_filt(m)=grd.Ia_filt(m)./grd.w(m);
             grd.Id(m) = grd.Id(m)./grd.w(m);
             grd.Id_filt(m)=grd.Id_filt(m)./grd.w(m);
             covis.grid{n} = grd;  
         case {'intensity_win'}
             m = find(grd.w);
+            grd.Ia(m) = grd.Ia(m)./grd.w(m);
+            grd.Ia_filt(m)=grd.Ia_filt(m)./grd.w(m);
             grd.Id(m) = grd.Id(m)./grd.w(m);
             grd.Id_filt(m)=grd.Id_filt(m)./grd.w(m);
             covis.grid{n} = grd;

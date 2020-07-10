@@ -23,7 +23,7 @@ if(isfield(grd.spacing,'dx')); dx = grd.spacing.dx; else dx = 0; end
 if(isfield(grd.spacing,'dy')); dy = grd.spacing.dy; else dy = 0; end
 if(isfield(grd.spacing,'dz')); dz = grd.spacing.dz; else dz = 0; end
 
-if(isfield(grd,'dimensions')) dims = grd.dimensions; else dims = 3; end
+if(isfield(grd,'dimensions')); dims = grd.dimensions; else dims = 3; end
 
 x = xmin:dx:xmax; % x coords of the grid
 y = ymin:dy:ymax; % y coords of the grid
@@ -50,6 +50,8 @@ if strcmp(grd.type,'doppler velocity')
     grd.covar=zeros(size(grd.x)); % define an empty grid for the covariance function
     grd.w = zeros(size(grd.x)); % define an empty grid for weight function
 elseif strcmp(grd.type,'intensity') || strcmp(grd.type,'intensity_win')
+    grd.Ia = zeros(size(grd.x)); % define an empty grid for ping-averaged volume backscattering coefficient
+    grd.Ia_filt = zeros(size(grd.x)); % define an empty grid for ping-averaged volume backscattering coefficient after OSCFAR filtering
     grd.Id = zeros(size(grd.x)); % define an empty grid for ping-differenced volume backscattering coefficient
     grd.Id_filt = zeros(size(grd.x)); % define an empty grid for ping-differenced volume backscattering coefficient after OSCFAR filtering
     grd.w = zeros(size(grd.x)); % define an empty grid for weight function

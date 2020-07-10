@@ -1,4 +1,4 @@
-function [vr_cov,vr_vel,rc,I_av,vr_std,covarsum] = covis_incoher_dop_xgy(hdr, dsp, range, data_burst)
+function [vr_cov,vr_vel,vr_std,I_a,I_d,covarsum, rc] = covis_incoher_dop_xgy(hdr, dsp, range, data_burst)
 
 % Coherent average of all input pings in burst is
 % subtracted from all pings to reduce ground return through sidelobes.
@@ -52,25 +52,29 @@ average = mean(data_burst,3);
 % main loop
 nbins=floor(size(data_burst,1)/(nwindow-noverlap));
 covar = zeros(nbins,size(data_burst,2),size(data_burst,3));
-I1 = zeros(size(covar));
+I1_a = zeros(size(covar));
+I1_d = zeros(size(covar));
 thetai = zeros(size(covar));
 for np = 1:size(data_burst,3)
     
-    switch method
-        case 'diff'
-            % Subtract average to reduce the contribution from the chimney
-            sig_ping = data_burst(:,:,np) - average;
-        case 'ave'
-            sig_ping = data_burst(:,:,np);
-    end
-    
+%     switch method
+%         case 'diff'
+%             % Subtract average to reduce the contribution from the chimney
+%             sig_ping = data_burst(:,:,np) - average;
+%         case 'ave'
+%             sig_ping = data_burst(:,:,np);
+%     end
+    sig_ping_a = data_burst(:,:,np);
+    sig_ping_d = data_burst(:,:,np) - average;
     % Window in range
-    [I1(:,:,np),~] = mag2_win(sig_ping,range,nwindow,noverlap);
-    [covar(:,:,np),rc] = autocovar_win(sig_ping,range,nwindow,noverlap,lag);
+    [I1_a(:,:,np),~] = mag2_win(sig_ping_a,range,nwindow,noverlap);
+    [I1_d(:,:,np),~] = mag2_win(sig_ping_d,range,nwindow,noverlap);
+    [covar(:,:,np),rc] = autocovar_win(sig_ping_d,range,nwindow,noverlap,lag);
     thetai(:,:,np)=angle(covar(:,:,np));
 end    % End loop on np
 
-I_av= mean(I1,3); % ping-averaged volume backscattering coefficient ( m^-1 )
+I_a= mean(I1_a,3); % ping-averaged volume backscattering coefficient ( m^-1 )
+I_d= mean(I1_d,3); % ping-averaged volume backscattering coefficient ( m^-1 )
 covarsum=sum(covar,3);
 thetac = angle(covarsum);
 theta_std=std(thetai,0,3); % calculate the standard deviation of the angular frequency estimation
