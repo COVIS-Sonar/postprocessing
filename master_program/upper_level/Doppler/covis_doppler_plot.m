@@ -1,14 +1,4 @@
-% This function is used to create 3D acoustic images of volume scattering 
-% strength (VSS) from the gridded Imaging-mode data
-
-% version 1.0 by guangyux@uw.edu (Oct 19, 2019)
-%  --based on the original code written by Chris Jones in 2010
-% version 2.0 by guangyux@uw.edu (Feb 20, 2020)
-%  --new color schemes for bathymetry and VSS isosurfaces
-%  --new VSS isosurface values
-%  --new angles of viewpoint
-
-function covis_imaging_plot(covis)
+function covis_doppler_plot(covis)
 % Input:
 %  covis: the Matlab structure that contains the gridded Imaging data and
 %         metadata
@@ -23,11 +13,11 @@ threshold = 3; % threshold for differentiating plumes and structures (dB)
 % load data and grid
 swp_name = covis.sweep.name;
 swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
-xg = covis.grid.x;
-yg = covis.grid.y;
-zg = covis.grid.z;
-vg_a = covis.grid.Ia;
-vg_d = covis.grid.Id;
+xg = covis.grid{3}.x;
+yg = covis.grid{3}.y;
+zg = covis.grid{3}.z;
+vg_a = covis.grid{3}.Ia;
+vg_d = covis.grid{3}.Id;
 dvg = vg_d./vg_a;
 vg = vg_d;
 vg(10*log10(dvg)<threshold) = 10^-9;
@@ -54,7 +44,7 @@ zb(rb<4) = nan;
 
 
 % plot 3D image
-figure(1)
+figure
 % add bathy
 pbathy=surf(xb,yb,zb);
 axis image;
