@@ -46,7 +46,9 @@ def process( inputFile, outputDir ):
     basename = inputPath.stem
     basename = re.sub(r'\.tar','',basename)   ## Pathlib::stem only removes the .gz from .tar.gz
 
-    matOutput = basename + ".mat"
+    ## Special renaming "fullimaging1 -> imaging1"
+    outbase = basename.replace("fullimaging1", "imaging1")
+    matOutput = outbase + ".mat"
     matOutputPath = outputPath / matOutput
 
     logger.info("Processing input file: %s" % inputPath )
@@ -74,7 +76,10 @@ def process( inputFile, outputDir ):
     #err = io.StringIO()
 
     with runtime.Runtime() as covis:
-        result = covis.process( str(unpackedInput), str(matOutputPath), stdout=out, stderr=out )
+        if basename.find("fullimaging1"):    
+            result = covis.process_fullimaging( str(unpackedInput), str(matOutputPath), stdout=out, stderr=out )
+        else:
+            result = covis.process( str(unpackedInput), str(matOutputPath), stdout=out, stderr=out )
 
     out.seek(0)
     return ProcessResult( out )
