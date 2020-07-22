@@ -52,7 +52,6 @@ average = mean(data_burst,3);
 % main loop
 nbins=floor(size(data_burst,1)/(nwindow-noverlap));
 covar = zeros(nbins,size(data_burst,2),size(data_burst,3));
-I1_a = zeros(size(covar));
 I1_d = zeros(size(covar));
 thetai = zeros(size(covar));
 for np = 1:size(data_burst,3)
@@ -64,16 +63,13 @@ for np = 1:size(data_burst,3)
 %         case 'ave'
 %             sig_ping = data_burst(:,:,np);
 %     end
-    sig_ping_a = data_burst(:,:,np);
     sig_ping_d = data_burst(:,:,np) - average;
     % Window in range
-    [I1_a(:,:,np),~] = mag2_win(sig_ping_a,range,nwindow,noverlap);
     [I1_d(:,:,np),~] = mag2_win(sig_ping_d,range,nwindow,noverlap);
     [covar(:,:,np),rc] = autocovar_win(sig_ping_d,range,nwindow,noverlap,lag);
     thetai(:,:,np)=angle(covar(:,:,np));
 end    % End loop on np
-
-I_a= mean(I1_a,3); % ping-averaged volume backscattering coefficient ( m^-1 )
+[I_a,~] = mag2_win(average,range,nwindow,noverlap); % ping-averaged volume backscattering coefficient ( m^-1 )
 I_d= mean(I1_d,3); % ping-averaged volume backscattering coefficient ( m^-1 )
 covarsum=sum(covar,3);
 thetac = angle(covarsum);
