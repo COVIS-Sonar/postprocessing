@@ -35,6 +35,32 @@ end
 % grid data
 swp_type = swp_name(23:25);
 switch swp_type
+    case 'ful'
+        % Processes "fullimaging1" file
+        % These files are processed both as an imaging sweep,
+        % then with the "covis_diffuse_fr_sweep" script
+        %
+        disp(['now processing full imaging file: ',swp_name])
+        try
+            covis.imaging = covis_imaging_sweep(raw_path,swp_name,0,fig);
+
+            covis.diffuse = covis_diffuse_fr_sweep(raw_path,swp_name,0,fig);
+
+        catch ME
+            warning(['Exception: ', ME.message, ' at ', ME.stack(1).file, ' line ', int2str(ME.stack(1).line) ])
+            disp(['Bad sweep:',swp_name])
+            try
+                rmdir(fullfile(raw_path,swp_name),'s');
+            catch
+                fprintf(sprintf('cannot remove %s \n',swp_name));
+            end
+        end
+
+        try
+            rmdir(fullfile(raw_path,swp_name),'s');
+        catch
+            fprintf(sprintf('cannot remove %s \n',swp_name));
+        end
     case 'ima'
         disp(['now processing imaging file: ',swp_name])
         try
