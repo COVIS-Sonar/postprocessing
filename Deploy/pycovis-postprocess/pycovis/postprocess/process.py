@@ -76,7 +76,8 @@ def process( inputFile, outputDir ):
     #err = io.StringIO()
 
     with runtime.Runtime() as covis:
-        if basename.find("fullimaging1"):    
+        if "fullimaging" in basename:
+            logger.info("  Processing file as full imaging")
             result = covis.process_fullimaging( str(unpackedInput), str(matOutputPath), stdout=out, stderr=out )
         else:
             result = covis.process( str(unpackedInput), str(matOutputPath), stdout=out, stderr=out )
