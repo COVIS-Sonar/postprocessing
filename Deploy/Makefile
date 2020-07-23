@@ -31,13 +31,12 @@ PP_SRC = $(shell find pycovis-postprocess -name "*.py" )
 
 #== Tasks related to building and testing Docker scripts ==
 docker:  ${PP_SRC}
-	docker build ${HTTP_PROXY_ARG} --tag ${CURRENT_VERSION_TAG} .
+	docker build ${HTTP_PROXY_ARG} --tag ${CURRENT_VERSION_TAG} --tag ${LATEST_TAG} .
 
 force_docker: ${PP_SRC}
-	docker build ${HTTP_PROXY_ARG} --tag ${CURRENT_VERSION_TAG} --no-cache .
+	docker build ${HTTP_PROXY_ARG} --tag ${CURRENT_VERSION_TAG} --tag ${LATEST_TAG} --no-cache .
 
 push: build
-	docker tag ${CURRENT_VERSION_TAG} ${LATEST_TAG}
 	docker push ${CURRENT_VERSION_TAG} ${LATEST_TAG}
 
 pytest: build
