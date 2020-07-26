@@ -1,12 +1,17 @@
 % This program is used to process gridded Doppler data to estimate plume
 % vertical velocity and volume flux
 
+% function output = get_plume_doppler_properties(covis,z_min,z_max,z_lin_min,z_lin_max,vss_low,vss_high)
+
+
 %% calculate vertical velocities
 
 z_min = 5;
 z_max = 14;
 z_lin_min = 5;
 z_lin_max = 12;
+vss_low = -60;
+vss_high = -20;
 
 % set up grid parameters
 zg = squeeze(covis.grid{1}.z(1,1,:));
@@ -38,9 +43,9 @@ I0 = doppler_I.I(:,2);
 x0=doppler_I.x(:,2);
 y0=doppler_I.y(:,2);
 z0=doppler_I.z;
-corr_ori(:,1)=x0;
-corr_ori(:,2)=y0;
-corr_ori(:,3)=z0;
+coor_ori(:,1)=x0;
+coor_ori(:,2)=y0;
+coor_ori(:,3)=z0;
 x02 = x0;
 y02 = y0;
 x02(flag0==1) = nan;
@@ -53,9 +58,11 @@ x0_filt = movmean(x02,8,'omitnan');
 y0_filt = movmean(y02,8,'omitnan');
 x0_filt(isnan(x02)) = nan;
 y0_filt(isnan(y02)) = nan;
-corr_filt(:,1) = x0_filt;
-corr_filt(:,2) = y0_filt;
-corr_filt(:,3) = z0;
+coor_filt(:,1) = x0_filt;
+coor_filt(:,2) = y0_filt;
+coor_filt(:,3) = z0;
+
+[vol,vss_vol] = get_plume_volume_vss_fun(grd,coor_filt,z_min,z_max,vss_low,vss_high);
 
 % Using a quadratic fit to parameterize the 3D centerline curve
 t=(0:length(x0_filt)-1)';
@@ -67,9 +74,9 @@ p3=polyfit(t(ii),z0(ii),2);
 x_fit=p1(1)*t.^2+p1(2)*t+p1(3);
 y_fit=p2(1)*t.^2+p2(2)*t+p2(3);
 z_fit=p3(1)*t.^2+p3(2)*t+p3(3);
-corr_fit(:,1)=x_fit;
-corr_fit(:,2)=y_fit;
-corr_fit(:,3)=z_fit;
+coor_fit(:,1)=x_fit;
+coor_fit(:,2)=y_fit;
+coor_fit(:,3)=z_fit;
 
 % Using a third order polynomial to parameterize the 3-D plume centerline
 % t = 0:length(x0)-1;
@@ -83,9 +90,9 @@ corr_fit(:,3)=z_fit;
 % x_fit=p1(1)*t.^3+p1(2)*t.^2+p1(3)*t+p1(4);
 % y_fit=p2(1)*t.^3+p2(2)*t.^2+p2(3)*t+p2(4);
 % z_fit=p3(1)*t.^3+p3(2)*t.^2+p3(3)*t+p3(4);
-% corr_fit(:,1)=x_fit;
-% corr_fit(:,2)=y_fit;
-% corr_fit(:,3)=z_fit;
+% coor_fit(:,1)=x_fit;
+% coor_fit(:,2)=y_fit;
+% coor_fit(:,3)=z_fit;
 
 % caculate the unit radial vector of the fitted centerline
 covis_alt = 4.2;
@@ -148,9 +155,9 @@ z_lin_fit = m(3)+p(3)*t;
 x_lin_fit = x_lin_fit+x0_sub(1);
 y_lin_fit = y_lin_fit+y0_sub(1);
 z_lin_fit = z_lin_fit+z0_sub(1);
-corr_lin_fit(:,1)=x_lin_fit;
-corr_lin_fit(:,2)=y_lin_fit;
-corr_lin_fit(:,3)=z_lin_fit;
+coor_lin_fit(:,1)=x_lin_fit;
+coor_lin_fit(:,2)=y_lin_fit;
+coor_lin_fit(:,3)=z_lin_fit;
 if p(3)<0
     p = -p;
 end
@@ -250,7 +257,7 @@ for j=1:length(z0)
     %calculate rotation axis and angles
     theta = 90+180*atan2(dydt(j),dxdt(j))/pi;
     alpha(j) = 180*acos(dzdt(j))/pi;
-    rotate(hslice,[theta,0],alpha(j),[corr_fit(j,1),corr_fit(j,2),corr_fit(j,3)]);
+    rotate(hslice,[theta,0],alpha(j),[coor_fit(j,1),coor_fit(j,2),coor_fit(j,3)]);
     %rotate(hslice,[theta,0],alpha(j));
     xd = get(hslice,'XData');
     yd = get(hslice,'YData');
@@ -279,8 +286,8 @@ for k=1:length(z0)
     if flag0(k) == 1
         continue
     end
-    x01 = corr_fit(k,1);
-    y01 = corr_fit(k,2);
+    x01 = coor_fit(k,1);
+    y01 = coor_fit(k,2);
     I01 = I0(k);
     I1 = Id_sub(:,:,k);
 
@@ -311,10 +318,12 @@ output.azimuth = azimuth_lin;
 output.angles = angles;
 output.ecerc = ecerc;
 output.flag = flag0;
-output.corr_ori = corr_ori;
-output.corr_filt = corr_filt;
-output.corr_fit = corr_fit;
-output.corr_lin_fit = corr_lin_fit;
+output.coor_ori = coor_ori;
+output.coor_filt = coor_filt;
+output.coor_fit = coor_fit;
+output.coor_lin_fit = coor_lin_fit;
+output.vol = vol;
+output.vss_vol = vss_vol;
 output.I = Id_sub;
 output.Ip = cd_I;
 output.v_h = v_h;
@@ -328,7 +337,7 @@ output.s = s;
 output.x = xg;
 output.y = yg;
 output.z = zg;
-%end
+% end
 
 
 
