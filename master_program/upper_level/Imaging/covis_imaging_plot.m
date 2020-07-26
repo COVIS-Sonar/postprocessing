@@ -34,7 +34,6 @@ vg(10*log10(dvg)<threshold) = 10^-9;
 
 
 
-
 % load bathymetry data
 if swp_date<=datenum(2019,7,6)
     bathy_name = sprintf('covis_bathy_2018.mat');
@@ -54,7 +53,7 @@ zb(rb<4) = nan;
 
 
 % plot 3D image
-figure(1)
+figure
 % add bathy
 pbathy=surf(xb,yb,zb);
 axis image;
@@ -114,5 +113,5 @@ set(h, 'ActionPreCallback', 'set(gcf,''windowbuttonmotionfcn'',@align_axislabel)
 set(h, 'ActionPostCallback', 'set(gcf,''windowbuttonmotionfcn'','''')')
 set(gcf, 'ResizeFcn', @align_axislabel)
 align_axislabel([], gca)
-end
+%end
 
