@@ -1,10 +1,10 @@
-% This function process the raw data recorded in COVIS's Imaging mode to
+% This function process the raw data recorded in COVIS's Doppler mode to
 % generate gridded data that is saved in the 'covis' structure array
 
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
 
-%function covis = covis_imaging_sweep(swp_path, swp_name, json_file, fig)
+function covis = covis_doppler_sweep(swp_path, swp_name, json_file, fig)
 % Input:
 % swp_path: raw data directory
 % swp_name: name of raw data sweep
@@ -16,9 +16,9 @@
 % and metadata
 
 % Example
-swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Doppler';
-swp_name = 'COVIS-20191113T020002-doppler1';
-json_file = 0;
+% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Doppler';
+% swp_name = 'COVIS-20191113T020002-doppler1';
+% json_file = 0;
 
 
 
@@ -563,5 +563,10 @@ covis.processing.oscfar.clutterp = clutterp;
 covis.processing.oscfar.scrthreshold = scrthreshold;
 covis.burst = burst;
 covis.bad_ping = bad_ping;
+
+% plot plume image
+if fig == 1
+    covis_doppler_plot(covis)
+end
 
 
