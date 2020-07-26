@@ -44,10 +44,10 @@ c = gsw_sound_speed_t_exact(S,T,p); % sound speed ( m/s )
 % % signal-to-noise (SNR) parameters
 % noise_floor = 0.1970; % rms noise floor
 % snr_thresh = 60+30; % SNR threshold (dB)
-% 
+%
 % % correlation time lag (sec)
 % tlag = 2;
-% 
+%
 % % averaging window length (sec)
 % avg_win = 4;
 
@@ -253,24 +253,24 @@ nbursts = length(burst);
 burst_count = 0;
 
 for nb = 1:nbursts
-    
+
     % check elevation
     if((burst(nb).pitch < elev_start) || (burst(nb).pitch > elev_stop))
         continue;
     end
-    
+
     if(Verbose)
         fprintf('Burst %d: pitch %0.2f\n', nb, burst(nb).pitch);
     end
-    
+
     npings = burst(nb).npings;
-    
+
     % check that there's enough pings in burst
     if((npings < 2))
         fprintf('Not enough pings in burst\n');
         continue;
     end
-    
+
     % loop over pings in a burst, read data and hold onto it
     ping_count = 0;
     ping_num_burst = nan(1,npings);
@@ -290,12 +290,12 @@ for nb = 1:nbursts
         yaw = (pi/180) * png(ip).rot_yaw;
         pitch = (pi/180)*png(ip).sen_pitch;
         roll = (pi/180)*png(ip).sen_roll;
-        
+
         if(Verbose > 1)
             fprintf(' %s: pitch %0.2f, roll %0.2f, yaw %0.2f\n', bin_file, ...
                 pitch*180/pi, roll*180/pi, yaw*180/pi);
         end
-        
+
         % read raw element quadrature data
         try
             [hdr, data1] = covis_read(fullfile(swp_dir, bin_file));
@@ -305,26 +305,26 @@ for nb = 1:nbursts
             bad_ping(bad_ping_count) = ping_num;
             continue
         end
-        
+
         if isempty(data1) || size(data1,2)~=128
             fprintf('Warning: error reading ping %d\n',ping_num);
             bad_ping_count = bad_ping_count + 1;
             bad_ping(bad_ping_count) = ping_num;
             continue;
         end
-        
+
         ping_count = ping_count+1;
         if(ping_count == 1)
             data = nan(size(data1,1),size(data1,2),npings);
         end
         data(:,:,np) = data1;
     end  % End loop on pings
-    
+
     if all(isnan(data(:)))
         fprintf('no valid pings at pitch %f\n',burst(nb).pitch);
         continue
     end
-    
+
     % Loop again on pings to calculate backscatter intensity and
     % scintillation parameters
     I_t1 = nan(size(data));
@@ -353,7 +353,7 @@ for nb = 1:nbursts
         bfm.last_samp = hdr.last_samp + 1;
         bfm.start_angle = -64;
         bfm.end_angle = 64;
-        
+
         % Apply Filter to data
         try
             [data1, filt, png(ping_num)] = covis_filter(data1, filt, png(ping_num));
@@ -361,7 +361,7 @@ for nb = 1:nbursts
             fprintf('Warning: error in filtering ping: %d\n',png(ping_num).num)
             continue;
         end
-        
+
         % beamform the quadrature data
         try
             [bfm, bf_sig1] = covis_beamform(bfm, data1);
@@ -376,9 +376,9 @@ for nb = 1:nbursts
             fprintf('Warning: error in calibrating ping: %d\n',png(ping_num).num)
             continue;
         end
-        
+
         bf_sig_t(:,:,np) = bf_sig1;
-        
+
         % calculate scintillation index and log-amplitude flluctuations
         I1 = abs(bf_sig1).^2;
         Isq1 = abs(bf_sig1).^4;
@@ -398,7 +398,7 @@ for nb = 1:nbursts
     Kp = nanmean(abs(bf_sig_t(:,:,ii_ave)).^2,3)./nanmean(abs(bf_sig_t(:,:,ii_ave)),3).^2-1;
     sig_phi2 = log(1./J);
     sig_phi2(J==0) = nan;
-    
+
     % loop over pings again to form ping-ping decorrelation
     bf_sig_t_sub = bf_sig_t(:,:,ii_ave);
     ping_sec_sub = ping_sec_burst(ii_ave);
@@ -406,11 +406,11 @@ for nb = 1:nbursts
     ping_rate = png(ping_num_sub(1)).hdr.max_ping_rate;
     for np = 1:size(bf_sig_t_sub,3)
         ping_num = ping_num_sub(np);
-        
+
         % get range and azimuthal angles
         range = bfm.range;
         azim = bfm.angle;
-        
+
         % calculate the target strength corresponding to the noise floor
         if np==1
             bf_sig1 = squeeze(bf_sig_t(:,:,np));
@@ -424,7 +424,7 @@ for nb = 1:nbursts
             E1_t = nan(size(I_t2));
             E2_t = nan(size(I_t2));
         end
-        
+
         t1 = png(ping_num).sec;
         t2 = t1+tlag;
         if ~isempty(find(abs(ping_sec_sub-t2)<1/ping_rate,1))
@@ -432,11 +432,11 @@ for nb = 1:nbursts
         else
             continue
         end
-        
+
         % pair of pings used
         bf_sig1 = bf_sig_t_sub(:,:,np);
         bf_sig2 = bf_sig_t_sub(:,:,np2);
-        
+
         % Correlate pings
         %  rc is the range of the center of the corr bin
         try
@@ -446,19 +446,19 @@ for nb = 1:nbursts
             continue
         end
         I2 = sqrt(E1.*E2);
-        
+
         % save the quanities of interest
         cov_t(:,:,np) = cov;
         E1_t(:,:,np) = E1;
         E2_t(:,:,np) = E2;
         I_t2(:,:,np) = I2;
     end
-    
+
     % average oveer ping pairs
     cor_av = abs(nansum(cov_t,3))./sqrt(nansum(E1_t,3).*nansum(E2_t,3));
     I_av2 = nanmean(I_t2,3);
     decor_I_av = (1-cor_av).*I_av2;
-    
+
     % mask out data points with low SNR
     snr1 = 10*log10(I_av1./I_noise1);
     snr2 = 10*log10(I_av2./I_noise2);
@@ -472,8 +472,8 @@ for nb = 1:nbursts
     Kp = Kp.*mask1;
     SI = SI.*mask1;
     sig_phi2 = sig_phi2.*mask1;
-    
-    
+
+
     burst_count = burst_count+1;
     if burst_count == 1
         xb_out = nan(bfm.num_beams,nbursts);
@@ -482,18 +482,18 @@ for nb = 1:nbursts
         xb2_out = nan(size(xb_out));
         yb2_out = nan(size(xb_out));
         zb2_out = nan(size(xb_out));
-        I1_out = nan(size(xb_out)); 
-        X_var_out = nan(size(xb_out)); 
-        SI_out = nan(size(xb_out)); 
+        I1_out = nan(size(xb_out));
+        X_var_out = nan(size(xb_out));
+        SI_out = nan(size(xb_out));
         Kp_out = nan(size(xb_out));
-        sig_phi2_out = nan(size(xb_out)); 
+        sig_phi2_out = nan(size(xb_out));
         I2_out = nan(size(xb_out));
         cor_out = nan(size(xb_out));
-        decor_I_out = nansize(xb_out);        
+        decor_I_out = nansize(xb_out);
     end
 
     % % transform sonar coords into world coords
-    
+
     % loop over beams
     for m = 1:(bfm.num_beams)
         % find max return in each beam
@@ -538,7 +538,7 @@ for k = 1:length(covis.grid)
         case 'Sig_phi2'
             [grd.v, grd.w] = l2grid(xb_out, yb_out, sig_phi2_out, grd.x, grd.y, grd.v, grd.w);
         case 'Kp'
-            [grd.v, grd.w] = l2grid(xb_out, yb_out, Kp_out, grd.x, grd.y, grd.v, grd.w);            
+            [grd.v, grd.w] = l2grid(xb_out, yb_out, Kp_out, grd.x, grd.y, grd.v, grd.w);
     end
     covis.grid{k} =grd;
 end
@@ -663,4 +663,5 @@ if fig==1
     hold off;
     title('Normalized Amplitude Variance');
 end
-end
+
+%end

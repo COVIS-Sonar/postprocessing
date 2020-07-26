@@ -1,6 +1,8 @@
 
 
-IMAGE_TAG = amarburg/covis-postprocess:latest
+BASE_TAG = amarburg/covis-postprocess
+LATEST_TAG = ${BASE_TAG}:latest
+CURRENT_VERSION_TAG = ${BASE_TAG}:3.2
 
 ifdef http_proxy
 	HTTP_PROXY_ARG := --build-arg http_proxy=$(http_proxy)
@@ -29,26 +31,26 @@ PP_SRC = $(shell find pycovis-postprocess -name "*.py" )
 
 #== Tasks related to building and testing Docker scripts ==
 docker:  ${PP_SRC}
-	docker build ${HTTP_PROXY_ARG} --tag ${IMAGE_TAG} .
+	docker build ${HTTP_PROXY_ARG} --tag ${CURRENT_VERSION_TAG} --tag ${LATEST_TAG} .
 
 force_docker: ${PP_SRC}
-	docker build ${HTTP_PROXY_ARG} --tag ${IMAGE_TAG} --no-cache .
+	docker build ${HTTP_PROXY_ARG} --tag ${CURRENT_VERSION_TAG} --tag ${LATEST_TAG} --no-cache .
 
 push: build
-	docker push ${IMAGE_TAG}
+	docker push ${CURRENT_VERSION_TAG} ${LATEST_TAG}
 
 pytest: build
 	mkdir -p tmp/pytest_output/
 	docker run --rm \
 						-v $(shell pwd)/../TestData/:/input \
 						-v $(shell pwd)/tmp/pytest_output:/output \
-						${IMAGE_TAG}  -m pytest
+						${CURRENT_VERSION_TAG}  -m pytest
 
 #						--workdir $(shell pwd)/pycovis-postprocess \
 
 #== Some examples of running python scripts in the Docker image... ==
 version: build
-	docker run -i --rm ${IMAGE_TAG} pycovis-postprocess/scripts/version.py
+	docker run -i --rm ${CURRENT_VERSION_TAG} pycovis-postprocess/scripts/version.py
 
 TEST_DOCKER_MOUNTS = -v $(shell pwd)/../TestData/:/input \
 											-v $(shell pwd)/output:/output \
@@ -58,34 +60,41 @@ diffuse3: diffuse3.tar.gz_from_local diffuse3.7z_from_local
 diffuse3.tar.gz_from_local: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.tar.gz --output /output/
+ 					${CURRENT_VERSION_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.tar.gz --output /output/
 
 diffuse3.7z_from_local: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.7z --output /output/
+ 					${CURRENT_VERSION_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T003346-diffuse3.7z --output /output/
 
 imaging1: imaging1.tar.gz_from_local imaging1.7z_from_local
 
 imaging1.tar.gz_from_local: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.tar.gz --output /output/
+ 					${CURRENT_VERSION_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.tar.gz --output /output/
 
 imaging1.7z_from_local: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.7z --output /output/
+ 					${CURRENT_VERSION_TAG} pycovis-postprocess/scripts/process.py /input/2019/10/24/COVIS-20191024T000002-imaging1.7z --output /output/
 
 
 COVIS-20200421T133002-diffuse1.7z_from_local: build
 	mkdir -p output/
 	docker run --rm ${TEST_DOCKER_MOUNTS} \
- 					${IMAGE_TAG} pycovis-postprocess/scripts/process.py --output /output/ /input/2020/04/21/COVIS-20200421T133002-diffuse1.7z
+ 					${CURRENT_VERSION_TAG} pycovis-postprocess/scripts/process.py --output /output/ /input/2020/04/21/COVIS-20200421T133002-diffuse1.7z
 
 
+fullimaging1: COVIS-20200719T000001-fullimaging1.7z_from_local
 
-##== Tasks which run the Python library locally ==
+COVIS-20200719T000001-fullimaging1.7z_from_local: build
+	mkdir -p output/
+	docker run --rm ${TEST_DOCKER_MOUNTS} \
+ 					${CURRENT_VERSION_TAG} pycovis-postprocess/scripts/process.py --output /output/ /input/2020/07/19/COVIS-20200719T000001-fullimaging1.7z
+
+
+##== Tasks which run the Python library locally with a local Matlab install -- not in Docker ==
 
 LOCAL_MATLAB_INSTALL ?= /usr/local/MATLAB/R2020a
 LOCAL_MATLAB_ENV = 	\
@@ -120,10 +129,12 @@ local_diffuse3:
 
 
 
+##
 ##== Matlab packaging rules. ==
+##
 ## Must be run on a machine with Matlab Compiler SDK installed
 
-## TODO.  How to ensure the version of Matlab / mcc used matches the
+## /TODO.  How to ensure the version of Matlab / mcc used matches the
 ## runtime in the image?
 
 COVIS_REPO=..
