@@ -12,6 +12,7 @@ function covis_imaging_plot(covis)
 % Input:
 %  covis: the Matlab structure that contains the gridded Imaging data and
 %         metadata
+
 % Output:
 %  a 3D acoustic plume image
 
@@ -53,7 +54,7 @@ zb(rb<4) = nan;
 
 
 % plot 3D image
-figure
+figure(1)
 % add bathy
 pbathy=surf(xb,yb,zb);
 axis image;
