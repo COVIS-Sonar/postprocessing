@@ -8,13 +8,14 @@ function  data2_corr = covis_phase_correct(ping, data1, data2)
 % in a regular channel through cross-talk for phase correction. This change
 % was made in response to the malfunction of the monitor channel. 
 
-chn = 10; % # of the reference channel
+chn = size(data1,2); % # of the reference channel
+
 
 sample_rate = ping.hdr.sample_rate;
 pulse_width = ping.hdr.pulse_width;
 
 % Number of samples to keep from monitor channel
-nkeep = round(5*sample_rate*pulse_width);
+nkeep = round(3*sample_rate*pulse_width);
 
 % The monitor channel is the last channel
 monitor1 = data1(1:nkeep,chn);
