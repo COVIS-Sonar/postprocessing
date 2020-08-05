@@ -230,8 +230,8 @@ for j=1:length(z0)
         ecerc(j) = 0.2;
     end
     % calculate the elevation angle sin_theta
-    r=sqrt(xxg.^2+yyg.^2+(zg(j)*ones(size(xxg))).^2);
-    sin_theta=zg(j)./r;
+    r=sqrt(xxg.^2+yyg.^2+((zg(j)-covis_alt)*ones(size(xxg))).^2);
+    sin_theta=(zg(j)-covis_alt)./r;
     % estimate the vertical velocity component
     vz(:,:,j)=(vr(:,:,j)-vrc(j)*(dxdt(j)*xxg./r+dydt(j)*yyg./r)/ecerc(j))./sin_theta;
     C2 = sin_theta;
@@ -274,6 +274,7 @@ end
 cd_I(isnan(cd_I))=10^-9;
 
 %% calculate volume flux
+diagnosis = 0;
 dx = median(diff(xg));
 dy = median(diff(yg));
 windfact = 0.02;
@@ -290,7 +291,6 @@ for k=1:length(z0)
     y01 = coor_fit(k,2);
     I01 = I0(k);
     I1 = Id_sub(:,:,k);
-
     vz1 = vz(:,:,k);
     ww = zeros(size(I1));
     ww(I1/I01>exp(-4)&abs(xxg-x01)<R&abs(yyg-y01)<R)=1;
@@ -301,13 +301,70 @@ for k=1:length(z0)
     ind = cc.PixelIdxList;
     ww_d = ww;
     ww_d(ind{i_area})=0;
-    ww = ww-ww_d;
+    ww = ww-ww_d;    
     area(k) = area_max*median(diff(xg))*median(diff(yg));
     window = 1 - exp(-(I1/(windfact*I01)).^4);
     vz_filt1 = vz1.*ww.*window;
     vz_filt(:,:,k) = vz_filt1;
-    Q(k) = dx*dy*sum(vz_filt1(:))./mean(window(:));
+    Q(k) = dx*dy*sum(vz_filt1(:));
+    
+    if diagnosis == 1
+        figure
+        subplot(1,3,1)
+        pcolorjw(xg,yg,10*log10(I1));
+        axis image;
+        hold on;
+        plot(x01,y01,'.g','markersize',15)
+        hold off;
+        xlim([-20 -5]);
+        ylim([-10 10]);
+        caxis([-90 -30]);
+        colormap('jet');
+        title(sprintf('z0:%3.1f',z0(k)));
+        
+        subplot(1,3,2)
+        pcolorjw(xg,yg,ww);
+        axis image;
+        hold on;
+        plot(x01,y01,'.g','markersize',15)
+        hold off;
+        caxis([0 1]);
+        colormap('jet');
+        xlim([-20 -5]);
+        ylim([-10 10]);
+        title(sprintf('z0:%3.1f',z0(k)));
+        
+        subplot(1,3,3)
+        pcolorjw(xg,yg,vz_filt1);
+        axis image;
+        hold on;
+        plot(x01,y01,'.g','markersize',15)
+        hold off;
+        caxis([-0.3 0.3]);
+        colormap('jet');
+        xlim([-20 -5]);
+        ylim([-10 10]);
+        title(sprintf('z0:%3.1f',z0(k)));
+    end
 end
+
+% plot plume image and volume flux profiles
+covis_doppler_plot(covis);
+ii = find(flag0~=1);
+hold on;
+plot3(coor_fit(ii,1),coor_ori(ii,2),coor_ori(ii,3),'.g','markersize',10)
+hold off;
+
+
+figure
+plot(Q(ii),z0(ii),'.-')
+xlabel('Volume Flux ( m^3 )');
+ylabel('Height ( m )')
+set(gca,'fontsize',12);
+title(covis.sweep.name);
+fig_name2 = sprintf('volume_flux_%s',covis.sweep.name);
+
+
 
 
 
@@ -324,6 +381,7 @@ output.coor_fit = coor_fit;
 output.coor_lin_fit = coor_lin_fit;
 output.vol = vol;
 output.vss_vol = vss_vol;
+output.I0 = I0;
 output.I = Id_sub;
 output.Ip = cd_I;
 output.v_h = v_h;
