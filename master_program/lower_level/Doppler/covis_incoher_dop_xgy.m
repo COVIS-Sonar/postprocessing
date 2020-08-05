@@ -1,4 +1,4 @@
-function [vr_cov,vr_vel,vr_std,I_a,I_d,covarsum,covar_offset,rc] = covis_incoher_dop_xgy(hdr, dsp, range, data_burst)
+function [vr_cov,vr_vel,vr_std,I_a,I_d,covarsum,rc] = covis_incoher_dop_xgy(hdr, dsp, range, data_burst)
 
 cor = dsp.correlation;
 
@@ -47,10 +47,6 @@ vr_vel = sound_speed*fsamp/(4*pi*frequency)*theta_m/lag; % velocity ping-average
 vr_cov = sound_speed*fsamp/(4*pi*frequency)*thetac/lag; % covariance ping-averaged radial velocity ( m/s )
 vr_std= sound_speed*fsamp/(4*pi*frequency)*theta_std/lag; % standard deviation of radial velocity ( m/s )
 
-% calculate the covariance function for the monitor channel (last channel)
-nkeep = round(3*fsamp*pulse_width);
-monitor = squeeze(data_burst(1:nkeep,end,:));
-covar_offset = nansum(nansum(monitor(1:end-lag,:).*conj(monitor(1+lag:end,:)),1));
 
 end
 
