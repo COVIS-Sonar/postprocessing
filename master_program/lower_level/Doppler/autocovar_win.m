@@ -33,8 +33,8 @@ for m=1:nbins
     end
     
     i=j:k;
-    covar(m,:)=mean(z(i,:).*conj(z(i+lag,:)));
-    rc(m)=mean(r(i));
+    covar(m,:)=nanmean(z(i,:).*conj(z(i+lag,:)));
+    rc(m)=nanmean(r(i));
     
 end
 
