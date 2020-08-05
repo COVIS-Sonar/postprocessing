@@ -4,7 +4,7 @@
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
 
-function covis = covis_doppler_sweep(swp_path, swp_name, json_file, fig)
+%function covis = covis_doppler_sweep(swp_path, swp_name, json_file, fig)
 % Input:
 % swp_path: raw data directory
 % swp_name: name of raw data sweep
@@ -16,10 +16,10 @@ function covis = covis_doppler_sweep(swp_path, swp_name, json_file, fig)
 % and metadata
 
 % Example
-% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Doppler';
-% swp_name = 'COVIS-20191113T020002-doppler1';
-% json_file = 0;
-
+swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Doppler';
+swp_name = 'COVIS-20200803T200103-doppler1-special';
+json_file = 0;
+fig = 0;
 
 
 %% Initialization
@@ -195,8 +195,11 @@ end
 
 
 % range of elev angles to process
-elev_start = (covis.processing.bounds.pitch.start);
-elev_stop = (covis.processing.bounds.pitch.stop);
+% elev_start = (covis.processing.bounds.pitch.start);
+% elev_stop = (covis.processing.bounds.pitch.stop);
+
+elev_start = -45;
+elev_stop = -10;
 
 %% Main program
 % loop over bursts
@@ -204,6 +207,7 @@ bad_ping = zeros(0);
 bad_ping_count = 0;
 nbursts = length(burst);
 burst_count = 0;
+covar_offset_out = nan(40,nbursts);
 for nb = 1:nbursts
     
     % check elevation
@@ -279,6 +283,20 @@ for nb = 1:nbursts
             continue
         end
         
+        % Calculate the covariance function of the monitor
+        % signal. The covariance function will be used to correct the 
+        % offset in the radial velocity estimates caused by the timing 
+        % mismatch between the clocks in COVIS for data generation and 
+        % digitization.  
+        cor = dsp.correlation;
+        lag = cor.nlag;
+        fsamp = png(ip).hdr.sample_rate;
+        pulse_width = png(ip).hdr.pulse_width;
+        nkeep = round(3*fsamp*pulse_width);
+        monitor = squeeze(data(1:nkeep,end,:));
+        covar_offset1 = nansum(monitor(1:end-lag,:).*conj(monitor(1+lag:end,:)),1);
+        covar_offset_out(np,nb) = covar_offset1;
+        
         % Apply Filter to data
         try
             [data, filt, png(ip)] = covis_filter(data, filt, png(ip));
@@ -335,7 +353,6 @@ for nb = 1:nbursts
         Id_filt_out1 = nan(size(xv_out1));
         
         
-        cor = dsp.correlation;
         % correlation range window size [number of samples]
         if(~isfield(cor,'window_size'))
             cor.window_size = 0.001;
@@ -476,7 +493,15 @@ for nb = 1:nbursts
     vr_std_out(:,:,nb) = vr_std;
     covar_out(:,:,nb) = covar;
 end   % End loop over bursts
-
+theta_offset = angle(covar_offset_out);
+theta_offset_ave = angle(nansum(covar_offset_out(:)));
+lag = cor.nlag;
+sound_speed = png(1).hdr.sound_speed;
+frequency = png(1).hdr.xmit_freq;
+fsamp = png(1).hdr.sample_rate;
+pulse_width = png(1).hdr.pulse_width;
+vr_offset = sound_speed*fsamp/(4*pi*frequency)*theta_offset/lag;
+vr_offset_ave = sound_speed*fsamp/(4*pi*frequency)*theta_offset_ave/lag;
 
 % grid the data
 
@@ -529,6 +554,8 @@ for n=1:length(covis.grid)
             grd.std(m) = grd.std(m)./grd.w(m);
             grd.covar(m)=grd.covar(m)./grd.w(m);
             covis.grid{n} = grd;
+            covis.grid{n}.vr_offset = vr_offset;
+            covis.grid{n}.vr_offset_ave = vr_offset_ave;
         case {'intensity'}
             m = find(grd.w);
             grd.Ia(m) = grd.Ia(m)./grd.w(m);
