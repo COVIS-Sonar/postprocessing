@@ -4,7 +4,7 @@
 % version 1.0 by guangyux@uw.edu (Oct 19, 2019)
 %  --based on the original code written by Chris Jones in 2010
 
-%function covis = covis_doppler_sweep(swp_path, swp_name, json_file, fig)
+function covis = covis_doppler_sweep(swp_path, swp_name, json_file, fig)
 % Input:
 % swp_path: raw data directory
 % swp_name: name of raw data sweep
@@ -16,10 +16,10 @@
 % and metadata
 
 % Example
-swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Doppler';
-swp_name = 'COVIS-20200803T200103-doppler1-special';
-json_file = 0;
-fig = 0;
+% swp_path = 'F:\COVIS\Axial\COVIS_data\raw\Doppler';
+% swp_name = 'COVIS-20200713T060002-doppler1';
+% json_file = 0;
+% fig = 0;
 
 
 %% Initialization
@@ -195,11 +195,8 @@ end
 
 
 % range of elev angles to process
-% elev_start = (covis.processing.bounds.pitch.start);
-% elev_stop = (covis.processing.bounds.pitch.stop);
-
-elev_start = -45;
-elev_stop = -10;
+elev_start = (covis.processing.bounds.pitch.start);
+elev_stop = (covis.processing.bounds.pitch.stop);
 
 %% Main program
 % loop over bursts
@@ -293,8 +290,8 @@ for nb = 1:nbursts
         fsamp = png(ip).hdr.sample_rate;
         pulse_width = png(ip).hdr.pulse_width;
         nkeep = round(3*fsamp*pulse_width);
-        monitor = squeeze(data(1:nkeep,end,:));
-        covar_offset1 = nansum(monitor(1:end-lag,:).*conj(monitor(1+lag:end,:)),1);
+        monitor1 = squeeze(data(1:nkeep,end,:));
+        covar_offset1 = nansum(monitor1(1:end-lag,:).*conj(monitor1(1+lag:end,:)),1);
         covar_offset_out(np,nb) = covar_offset1;
         
         % Apply Filter to data
