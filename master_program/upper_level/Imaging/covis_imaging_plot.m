@@ -33,6 +33,8 @@ dvg = vg_d./vg_a;
 vg = vg_d;
 vg(10*log10(dvg)<threshold) = 10^-9;
 
+% smooth data 
+vg = smooth3(vg,'gaussian',3,0.3);
 
 
 % load bathymetry data
