@@ -63,7 +63,7 @@ plot(0,0,'.g','markersize',15);
 hold off;
 xlabel('Easting of COVIS ( m )');
 ylabel('Northing of COVIS ( m )');
-%title(swp_name);
+title(swp_name);
 h = colorbar;
 title(h,indname);
 ct = cbrewer('seq','Reds',9);
