@@ -49,8 +49,8 @@ c = gsw_sound_speed_t_exact(S,T,p); % sound speed ( m/s )
 
 % snr parameters
 noise_floor = 0.1970; % rms noise floor
-snr_thresh = 50; % threshold (dB)
-
+%snr_thresh = 50; % threshold (dB)
+snr_thresh = 0;
 
 % OSCFAR parameters
 clutterp = 65; % start with the 65% quantile as the clutter threshold
@@ -336,7 +336,7 @@ for nb = 1:nbursts
         Kp_out = nan(size(xv_out));
     end
 
-    % calculate SI
+    % calculate Kp
     Kp = nanmean(abs(bf_sig_out).^2,3)./nanmean(abs(bf_sig_out),3).^2-1;
 
     % ping average
