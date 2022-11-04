@@ -359,6 +359,7 @@ for nb = 1:nbursts
             fprintf('Warning: error in beamforming for ping: %d\n',png(ping_num).num)
             continue;
         end
+        
         % apply calibration to beamformed data
         try
             bf_sig1 = covis_calibration(bf_sig1, bfm, png(ping_num), cal,T,S,pH,lat,depth);

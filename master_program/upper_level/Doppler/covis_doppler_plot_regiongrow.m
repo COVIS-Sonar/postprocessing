@@ -1,7 +1,12 @@
-function covis_doppler_plot(covis)
+% This function is used to create 3D acoustic images of volume scattering 
+% strength (VSS) from the gridded Imaging-mode data
+
+
+function covis_doppler_plot_regiongrow(covis)
 % Input:
 %  covis: the Matlab structure that contains the gridded Imaging data and
 %         metadata
+
 % Output:
 %  a 3D acoustic plume image
 
@@ -16,11 +21,69 @@ swp_date = datenum(swp_name(7:21),'yyyymmddTHHMMSS');
 xg = covis.grid{3}.x;
 yg = covis.grid{3}.y;
 zg = covis.grid{3}.z;
+xgg = squeeze(xg(:,:,1));
+ygg = squeeze(yg(:,:,1));
+zgg = squeeze(zg(1,1,:));
 vg_a = covis.grid{3}.Ia;
 vg_d = covis.grid{3}.Id;
 dvg = vg_d./vg_a;
 vg = vg_d;
 vg(10*log10(dvg)<threshold) = 10^-9;
+
+
+% smooth data 
+vg_plot = smooth3(vg,'gaussian',7,0.3);
+
+
+% use the method region growing to mask out noise and artifacts
+R = 4;
+vg_thresh = exp(-8);
+x0 = -13.27;
+y0 = -0.77;
+zmin = 4;
+zmax = 20;
+vg_plot(zg<zmin|zg>zmax) = 10^-9;
+i0 = find(zgg==zmin);
+iN = find(zgg==zmax);
+vg_mask = vg_plot;
+count = 0;
+% xc = zeros(1,iN-i0+1);
+% yc = zeros(1,iN-i0+1);
+% zc = zeros(1,iN-i0+1);
+% Ic = zeros(1,iN-i0+1);
+for iz = i0:iN
+    count = count+1;
+%     xc(count) = x0;
+%     yc(count) = y0;
+%     zc(count) = zgg(iz);
+    vg1 = squeeze(vg_plot(:,:,iz));
+    d = sqrt((xgg(:)-x0).^2+(ygg(:)-y0).^2);
+    vg1_search = vg1;
+    vg1_search(d>R) = 0;
+    vg1_base = max(vg1_search(:));
+    vg1_search = vg1_search/vg1_base;
+    ww = zeros(size(vg1_search));
+    ww(vg1_search>vg_thresh)=1;
+    cc = bwconncomp(ww,4);
+    object_prop = regionprops(cc);
+    if isempty(object_prop)
+        vg_mask(:,:,iz) = vg1;
+        continue
+    end
+    object_area = [object_prop.Area];
+    [area_max,i_area]=max(object_area);
+%    indc = object_prop(i_area).Centroid;
+    ind = cc.PixelIdxList;
+    indp = ind{i_area};
+    mask = zeros(size(vg1));
+    mask(indp) = 1;
+    vg_mask(:,:,iz) = vg1.*mask;
+%     Ic(count) = max(vg1(:).*mask(:));
+%     vg_mask_norm(:,:,iz) = vg_mask(:,:,iz)/Ic(count);
+%     x0 = interp1(1:size(xgg,2),xgg(1,:),indc(1));
+%     y0 = interp1(1:size(ygg,1),ygg(:,1),indc(2));
+end
+vg_mask(vg_mask==0) = 10^-9; 
 
 
 
@@ -73,7 +136,7 @@ isosurf{1}.alpha = 0.1;
 isosurf{2}.alpha = 0.2;
 isosurf{3}.alpha = 0.3;
 for n=1:length(isosurf)
-    v = vg;
+    v = vg_mask;
     eps = nan;
     m = find(v==0);
     v(m) = eps;  % remove zeros
@@ -86,23 +149,26 @@ for n=1:length(isosurf)
     set(p,'EdgeColor','none','FaceColor',surf_color,'FaceAlpha',surf_alpha);
 end
 daspect([1 1 1])
+% xlim([-20 1]);
+% ylim([-8 12]);
 xlim([-20 1]);
-ylim([-8 12]);
+ylim([-12 12]);
 zlim([-2 15]);
 plot3([0,0],[0,0],[0,4.2],'y','linewidth',4);
 hold off;
-az = 76.5;
+%az = 76.5;
+az = -57+180;
 el = 26;
 view([az,el])
 camlight('headlight');
-xlabel('Easting of COVIS ( m )')
-ylabel('Northing of COVIS ( m )')
-zlabel('Height above COVIS base ( m )')
-title(covis.sweep.name);
+title(sprintf('%s',covis.sweep.name(7:21)));
 h = rotate3d;
 set(h, 'ActionPreCallback', 'set(gcf,''windowbuttonmotionfcn'',@align_axislabel)')
 set(h, 'ActionPostCallback', 'set(gcf,''windowbuttonmotionfcn'','''')')
 set(gcf, 'ResizeFcn', @align_axislabel)
 align_axislabel([], gca)
+xlabel('Easting of COVIS ( m )')
+ylabel('Northing of COVIS ( m )')
+zlabel('Height above COVIS base ( m )')
 end
 

@@ -7,20 +7,12 @@
 %% calculate vertical velocities
 
 z_min = 5;
-z_max = 14;
-z_lin_min = 5;
-z_lin_max = 12;
-vss_low = -60;
-vss_high = -20;
+z_max = 12;
 
 % set up grid parameters
 zg = squeeze(covis.grid{1}.z(1,1,:));
 [~,iz1] = min(abs(zg-z_min));
 [~,iz2] = min(abs(zg-z_max));
-xg = squeeze(covis.grid{1}.x(1,:,1));
-yg = squeeze(covis.grid{1}.y(:,1,1));
-
-
 
 % extract plume centerline properties
 xs = -13.27; % x-coordinate of Inferno (m) (2019)
@@ -28,44 +20,39 @@ ys = -0.77; % y-coordinate of Inferno (m) (2019)
 Ri = 4; % inner radius (m)
 Ro = 8; % outer radius (m)
 diagnosis = 0; % diagnosis toggle
-thresh = 3;
-grd = covis.grid{3};
-Ia = grd.Ia;
-Id = grd.Id;
-dI = Id./Ia;
-Id(10*log10(dI)<thresh) = 10^-9;
-grd.Id = Id;
-doppler_I = get_plume_centerline_properties_fun(grd,xs,ys,Ri,Ro,z_min,z_max,diagnosis);
+
+
+doppler_I = get_plume_doppler_centerline_properties_fun_regiongrow_nlinfit(covis,xs,ys,Ri,Ro,z_min,z_max,diagnosis);
 
 % coordiantes of the centerline
-flag0 = doppler_I.Flag;
-I0 = doppler_I.I(:,2);
-x0=doppler_I.x(:,2);
-y0=doppler_I.y(:,2);
+%flag0 = doppler_I.Flag;
+I0 = doppler_I.I;
+b0 = doppler_I.b;
+x0=doppler_I.x;
+y0=doppler_I.y;
 z0=doppler_I.z;
 coor_ori(:,1)=x0;
 coor_ori(:,2)=y0;
 coor_ori(:,3)=z0;
 x02 = x0;
 y02 = y0;
-x02(flag0==1) = nan;
-y02(flag0==1) = nan;
-d = sqrt((x02-xs).^2+(y02-ys).^2);
-x02(d>2*(z_max-z_min)) = nan;
-y02(d>2*(z_max-z_min)) = nan;
-flag0(isnan(x02)) = 1;
-x0_filt = movmean(x02,8,'omitnan');
-y0_filt = movmean(y02,8,'omitnan');
+x02(isnan(I0)|10*log10(I0)<-60) = nan;
+y02(isnan(I0)|10*log10(I0)<-60) = nan;
+x0_filt = movmedian(x02,16,'omitnan');
+y0_filt = movmedian(y02,16,'omitnan');
 x0_filt(isnan(x02)) = nan;
 y0_filt(isnan(y02)) = nan;
+d = sqrt((x02-x0_filt).^2+(y02-y0_filt).^2);
+x02(d>1) = nan;
+y02(d>1) = nan;
+x0_filt = movmedian(x02,8,'omitnan');
+y0_filt = movmedian(y02,8,'omitnan');
 coor_filt(:,1) = x0_filt;
 coor_filt(:,2) = y0_filt;
 coor_filt(:,3) = z0;
 
-[vol,vss_vol] = get_plume_volume_vss_fun(grd,coor_filt,z_min,z_max,vss_low,vss_high);
-
 % Using a quadratic fit to parameterize the 3D centerline curve
-t=(0:length(x0_filt)-1)';
+t=(0:length(x0_filt)-1);
 ii = find(~isnan(x0_filt));
 p1=polyfit(t(ii),x0_filt(ii),2);
 p2=polyfit(t(ii),y0_filt(ii),2);
@@ -143,11 +130,11 @@ end
 
 
 % calculate the linear-fit to the centerline (least-square);
-ii = find(z0>z_lin_min&z0<z_lin_max&~isnan(x0_filt));
+ii = find(~isnan(x0_filt));
 x0_sub = x0_filt(ii);
 y0_sub = y0_filt(ii);
 z0_sub = z0(ii);
-[m,p,~] = best_fit_line(x0_sub-x0_sub(1),y0_sub-y0_sub(1),z0_sub-z0_sub(1));
+[m,p,~] = best_fit_line(x0_sub(:)-x0_sub(1),y0_sub(:)-y0_sub(1),z0_sub(:)-z0_sub(1));
 t = -10:10;
 x_lin_fit = m(1)+p(1)*t;
 y_lin_fit = m(2)+p(2)*t;
@@ -193,16 +180,24 @@ xg=squeeze(covis.grid{1}.x(1,:,1));
 yg=squeeze(covis.grid{1}.y(:,1,1));
 zg=squeeze(covis.grid{1}.z(1,1,iz1:iz2));
 vrc=zeros(length(z0),1); % centerline radial velocity
-vrc_std=zeros(length(z0),1); % standard deviation of the centerline velocity
 vc = zeros(length(z0),1);
-v_h = zeros(length(z0),2);
-v_h_std = zeros(length(z0),2);
+vc_h = zeros(length(z0),2);
+vc_z = zeros(length(z0),1);
 
 % estimate the centerline radial velocity
 
 for i = 1:length(z0)
-    vrc(i)=interp2(xg,yg,vr(:,:,i),x_fit(i),y_fit(i));
-    vrc_std(i)=interp2(xg,yg,vr_std(:,:,i),x_fit(i),y_fit(i));
+%     x01 = x0(i);
+%     y01 = y0(i);
+%     b01 = b0(i);
+%     if (~isnan(x01)&&~isnan(y01)&&~isnan(b01))
+%         vr1 = squeeze(vr(:,:,i));
+%         d = sqrt((xg-x01).^2+(yg-y01).^2);
+%         vr1(d>b01) = 0;
+%         vrc(i) = max(vr1(:));
+%     else
+        vrc(i)=interp2(xg,yg,vr(:,:,i),x0(i),y0(i));
+%    end
 end
 
 % smoothing the centerline axial velocity using Lowess smoothing
@@ -238,43 +233,41 @@ for j=1:length(z0)
     A = 1./C2;
     vz_var(:,:,j) = A.^2.*vr_var(:,:,j);
     vz_std(:,:,j) = vz_var(:,:,j).^(1/2);
-    % estimate the centerline velocity
-    vc(j) = vrc(j)./ecerc(j);
-    % estimate the horizontal velocity component
-    v_h(j,1) = vrc(j)./ecerc(j)*dxdt(j); % eastward component
-    v_h_std(j,1) = vrc_std(j)./ecerc(j)*dxdt(j); %standard deviation
-    v_h(j,2) = vrc(j)./ecerc(j)*dydt(j); % northward component
-    v_h_std(j,2) = vrc_std(j)./ecerc(j)*dydt(j); % standard deviation
+    vc(j) = vrc(j)./ecerc(j); % centerline total velocity
+    vc_h(j,1) = vc(j)*dxdt(j); % centerline eastward component
+    vc_h(j,2) = vc(j)*dydt(j); % centerline northward component
+    vc_z(j) = vc(j)*dzdt(j); % centerline vertical velocity
 end
 
 % extract cross-section perpendicular to the plume's axis
+Id = covis.grid{3}.Id;
 Id_sub = Id(:,:,iz1:iz2);
-cd_I = zeros(size(Id_sub));
-alpha = zeros(1,length(z0));
-for j=1:length(z0)
-    [x_slice,y_slice]=meshgrid(xg,yg);
-    hslice = surf(x_slice,y_slice,zeros(size(x_slice))+zg(j));
-    %calculate rotation axis and angles
-    theta = 90+180*atan2(dydt(j),dxdt(j))/pi;
-    alpha(j) = 180*acos(dzdt(j))/pi;
-    rotate(hslice,[theta,0],alpha(j),[coor_fit(j,1),coor_fit(j,2),coor_fit(j,3)]);
-    %rotate(hslice,[theta,0],alpha(j));
-    xd = get(hslice,'XData');
-    yd = get(hslice,'YData');
-    zd = get(hslice,'ZData');
-    delete(hslice);
-    h =figure(1);
-    set(h,'Visible','off');
-    hs1 = slice(xg,yg,zg,10*log10(Id_sub),xd,yd,zd,'nearest');
-    shading interp
-    cd_I(:,:,j)=get(hs1,'CData');
-    clear hs1
-    cd_I(:,:,j)=10.^(cd_I(:,:,j)/10); % backscatter intensity over cross-sections perpendicular to the plume axis
-end
-cd_I(isnan(cd_I))=10^-9;
+% cd_I = zeros(size(Id_sub));
+% alpha = zeros(1,length(z0));
+% for j=1:length(z0)
+%     [x_slice,y_slice]=meshgrid(xg,yg);
+%     hslice = surf(x_slice,y_slice,zeros(size(x_slice))+zg(j));
+%     %calculate rotation axis and angles
+%     theta = 90+180*atan2(dydt(j),dxdt(j))/pi;
+%     alpha(j) = 180*acos(dzdt(j))/pi;
+%     rotate(hslice,[theta,0],alpha(j),[coor_fit(j,1),coor_fit(j,2),coor_fit(j,3)]);
+%     %rotate(hslice,[theta,0],alpha(j));
+%     xd = get(hslice,'XData');
+%     yd = get(hslice,'YData');
+%     zd = get(hslice,'ZData');
+%     delete(hslice);
+%     h =figure(1);
+%     set(h,'Visible','off');
+%     hs1 = slice(xg,yg,zg,10*log10(Id_sub),xd,yd,zd,'nearest');
+%     shading interp
+%     cd_I(:,:,j)=get(hs1,'CData');
+%     clear hs1
+%     cd_I(:,:,j)=10.^(cd_I(:,:,j)/10); % backscatter intensity over cross-sections perpendicular to the plume axis
+% end
+% cd_I(isnan(cd_I))=10^-9;
 
 %% calculate volume flux
-diagnosis = 0;
+diagnosis = 1;
 dx = median(diff(xg));
 dy = median(diff(yg));
 windfact = 0.02;
@@ -284,14 +277,12 @@ R = 5;
 area = nan(1,length(z0));
 vz_filt = nan(size(vz));
 for k=1:length(z0)
-    if flag0(k) == 1
-        continue
-    end
     x01 = coor_fit(k,1);
     y01 = coor_fit(k,2);
     I01 = I0(k);
     I1 = Id_sub(:,:,k);
     vz1 = vz(:,:,k);
+    vr1 = vr(:,:,k);
     ww = zeros(size(I1));
     ww(I1/I01>exp(-4)&abs(xxg-x01)<R&abs(yyg-y01)<R)=1;
     cc = bwconncomp(ww);
@@ -304,12 +295,14 @@ for k=1:length(z0)
     ww = ww-ww_d;    
     area(k) = area_max*median(diff(xg))*median(diff(yg));
     window = 1 - exp(-(I1/(windfact*I01)).^4);
+    window = 1;
     vz_filt1 = vz1.*ww.*window;
+    vr_filt1 = vr1.*ww;
     vz_filt(:,:,k) = vz_filt1;
-    Q(k) = dx*dy*sum(vz_filt1(:));
+    Q(k) = dx*dy*sum(vz_filt1(vz_filt1>0));
     
     if diagnosis == 1
-        figure
+        figure(1)
         subplot(1,3,1)
         pcolorjw(xg,yg,10*log10(I1));
         axis image;
@@ -323,13 +316,24 @@ for k=1:length(z0)
         title(sprintf('z0:%3.1f',z0(k)));
         
         subplot(1,3,2)
-        pcolorjw(xg,yg,ww);
+%         pcolorjw(xg,yg,ww);
+%         axis image;
+%         hold on;
+%         plot(x01,y01,'.g','markersize',15)
+%         hold off;
+%         caxis([0 1]);
+%         colormap('jet');
+%         xlim([-20 -5]);
+%         ylim([-10 10]);
+%         title(sprintf('z0:%3.1f',z0(k)));
+        pcolorjw(xg,yg,vr_filt1);
         axis image;
         hold on;
-        plot(x01,y01,'.g','markersize',15)
+        plot(x01,y01,'.r','markersize',15)
         hold off;
-        caxis([0 1]);
-        colormap('jet');
+        caxis([-0.1 0.1]);
+        ct = cbrewer('div','BrBG',11);
+        colormap(ct);
         xlim([-20 -5]);
         ylim([-10 10]);
         title(sprintf('z0:%3.1f',z0(k)));
@@ -338,63 +342,66 @@ for k=1:length(z0)
         pcolorjw(xg,yg,vz_filt1);
         axis image;
         hold on;
-        plot(x01,y01,'.g','markersize',15)
+        plot(x01,y01,'.r','markersize',15)
         hold off;
-        caxis([-0.3 0.3]);
-        colormap('jet');
+        caxis([-0.1 0.1]);
+        ct = cbrewer('div','BrBG',11);
+        colormap(ct);
         xlim([-20 -5]);
         ylim([-10 10]);
         title(sprintf('z0:%3.1f',z0(k)));
+        pause;
     end
 end
 
 % plot plume image and volume flux profiles
-covis_doppler_plot(covis);
-ii = find(flag0~=1);
-hold on;
-plot3(coor_fit(ii,1),coor_ori(ii,2),coor_ori(ii,3),'.g','markersize',10)
-hold off;
 
-
-figure
-plot(Q(ii),z0(ii),'.-')
-xlabel('Volume Flux ( m^3 )');
-ylabel('Height ( m )')
-set(gca,'fontsize',12);
-title(covis.sweep.name);
-fig_name2 = sprintf('volume_flux_%s',covis.sweep.name);
+% covis_doppler_plot_regiongrow(covis);
+% ii = find(flag0~=1);
+% hold on;
+% plot3(coor_fit(ii,1),coor_ori(ii,2),coor_ori(ii,3),'.g','markersize',10)
+% hold off;
+% 
+% 
+% figure
+% plot(Q(ii),z0(ii),'.-')
+% xlabel('Volume Flux ( m^3 )');
+% ylabel('Height ( m )')
+% set(gca,'fontsize',12);
+% title(covis.sweep.name);
+% fig_name2 = sprintf('volume_flux_%s',covis.sweep.name);
 
 
 
 
 
 % save results into a structure
-output.iz = iz1:iz2;
-output.inc_ang_lin = inc_ang_lin;
-output.azimuth = azimuth_lin;
-output.angles = angles;
-output.ecerc = ecerc;
-output.flag = flag0;
-output.coor_ori = coor_ori;
-output.coor_filt = coor_filt;
-output.coor_fit = coor_fit;
-output.coor_lin_fit = coor_lin_fit;
-output.vol = vol;
-output.vss_vol = vss_vol;
-output.I0 = I0;
-output.I = Id_sub;
-output.Ip = cd_I;
-output.v_h = v_h;
-output.vc = vc;
-output.vrc = vrc;
-output.vz = vz;
-output.vz_std = vz_std;
-output.vr = vr;
-output.Q = Q;
-output.s = s;
-output.x = xg;
-output.y = yg;
-output.z = zg;
+% output.iz = iz1:iz2;
+% output.inc_ang_lin = inc_ang_lin;
+% output.azimuth = azimuth_lin;
+% output.angles = angles;
+% output.ecerc = ecerc;
+% output.flag = flag0;
+% output.coor_ori = coor_ori;
+% output.coor_filt = coor_filt;
+% output.coor_fit = coor_fit;
+% output.coor_lin_fit = coor_lin_fit;
+% output.vol = vol;
+% output.vss_vol = vss_vol;
+% output.I0 = I0;
+% output.I = Id_sub;
+% output.Ip = cd_I;
+% output.v_h = v_h;
+% output.vc = vc;
+% output.vrc = vrc;
+% output.vz = vz;
+% output.vz_std = vz_std;
+% output.vr = vr;
+% output.Q = Q;
+% output.s = s;
+% output.x = xg;
+% output.y = yg;
+% output.z = zg;
 % end
 
 

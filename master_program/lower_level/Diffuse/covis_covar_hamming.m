@@ -33,7 +33,9 @@ rc=zeros(nbins,1);
 for m=1:nbins
     j=(m-1)*(window-overlap)+1;
     k=j+window-1;
-    if (k>N) k=N; end
+    if (k>N) 
+        k=N; 
+    end
     i=j:k;
     cabjk = cab(i,:);
     cov(m,:)=sum(cabjk.*ham_win);

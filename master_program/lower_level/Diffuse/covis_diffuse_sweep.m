@@ -499,7 +499,7 @@ for j = 1:length(azim)
     L_sub = sqrt(xw_sub.^2+yw_sub.^2+zw2_sub.^2);
     for i = 1:length(range)
         range1 = range(i);
-        ii = find(abs(L_sub-range1)<0.5*min(diff(rc)));
+        ii = find(abs(L_sub-range1)<0.5*min(diff(range)));
         if ~isempty(ii)
             x_out1(i,j) = mean(xw_sub(ii));
             y_out1(i,j) = mean(yw_sub(ii));

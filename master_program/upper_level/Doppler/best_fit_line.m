@@ -1,4 +1,4 @@
-function [m,p,s] = best_fit_line(x,y,z);
+function [m,p,s] = best_fit_line(x,y,z)
 
 % x,y,z are n x 1 column vectors of the three coordinates
 % of a set of n points in three dimensions. The best line,

@@ -208,9 +208,9 @@ covar_offset_out = nan(40,nbursts);
 for nb = 1:nbursts
     
     % check elevation
-    if((burst(nb).pitch < elev_start) || (burst(nb).pitch > elev_stop))
-        continue;
-    end
+%     if((burst(nb).pitch < elev_start) || (burst(nb).pitch > elev_stop))
+%         continue;
+%     end
     
     if(Verbose)
         fprintf('Burst %d: pitch %f\n', nb, burst(nb).pitch);
@@ -590,7 +590,7 @@ covis.bad_ping = bad_ping;
 
 % plot plume image
 if fig == 1
-    covis_doppler_plot(covis)
+    covis_doppler_plot_regiongrow(covis)
 end
-
+end
 

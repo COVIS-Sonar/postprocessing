@@ -34,7 +34,7 @@ thetai = zeros(size(covar));
 for np = 1:size(data_burst,3)
     sig_ping_d = data_burst(:,:,np) - average;
     [I1_d(:,:,np),~] = mag2_win(sig_ping_d,range,nwindow,noverlap);
-    [covar(:,:,np),rc] = autocovar_win(sig_ping_d,range,nwindow,noverlap,lag);
+    [covar(:,:,np),rc] = autocovar_win(data_burst(:,:,np),range,nwindow,noverlap,lag);
     thetai(:,:,np)=angle(covar(:,:,np));
 end    % End loop on np
 [I_a,~] = mag2_win(average,range,nwindow,noverlap); % ping-averaged volume backscattering coefficient ( m^-1 )
@@ -46,8 +46,6 @@ theta_m = nanmean(thetai,3); % calculate the mean of te angular frequency estima
 vr_vel = sound_speed*fsamp/(4*pi*frequency)*theta_m/lag; % velocity ping-averaged radial velocity ( m/s )
 vr_cov = sound_speed*fsamp/(4*pi*frequency)*thetac/lag; % covariance ping-averaged radial velocity ( m/s )
 vr_std= sound_speed*fsamp/(4*pi*frequency)*theta_std/lag; % standard deviation of radial velocity ( m/s )
-
-
 end
 
 

@@ -96,7 +96,6 @@ bfm.range = range;
 w1 = hamming(nchans)';
 
 lambda = c/f;  % wave length
-k = 2*pi/lambda;  % wave number
 omegac = 2*pi*f;
 t_delay_max = L/2/c*sin(angle)';
 delf = fsamp/nsamps;
